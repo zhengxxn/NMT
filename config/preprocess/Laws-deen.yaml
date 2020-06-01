@@ -1,0 +1,74 @@
+Annotation:
+  - preprocess Laws-deen
+
+# lowercase:
+  # - {language: en, dir: /home/zhengx/data/Laws-ende, files: [Laws-train.en, Laws-dev.en, Laws-test.en]}
+
+tokenize:
+  - {language: en, dir: /home/zhengx/data/Laws-ende, files: [Laws-train.en, Laws-dev.en, Laws-test.en]}
+  - {language: de, dir: /home/zhengx/data/Laws-ende, files: [Laws-train.de, Laws-dev.de, Laws-test.de]}
+
+
+clean:
+  - {min_len: 1, max_len: 50, src_language: de, trg_language: en, file_prefix: /home/zhengx/data/Laws-ende/Laws-train.token}
+
+learn_bpe:
+  - {bpe_operation: 16000, code_file: /home/zhengx/data/Laws-ende/code16k.de,
+     dir: /home/zhengx/data/Laws-ende,
+     files: [
+     "Laws-train.token.clean.de",
+  ]}
+
+  - {bpe_operation: 16000, code_file: /home/zhengx/data/Laws-ende/code16k.en,
+     dir: /home/zhengx/data/Laws-ende,
+     files: [
+     "Laws-train.token.clean.en",
+  ]}
+
+
+apply_bpe:
+  - {code_file: /home/zhengx/data/Laws-ende/code16k.de,
+     dir: /home/zhengx/data/Laws-ende,
+     files: [
+     "Laws-train.token.clean.de",
+     "Laws-dev.token.de",
+     "Laws-test.token.de",
+  ]}
+
+  - {code_file: /home/zhengx/data/Laws-ende/code16k.en,
+     dir: /home/zhengx/data/Laws-ende,
+     files: [
+     "Laws-train.token.clean.en",
+     "Laws-dev.token.en",
+     "Laws-test.token.en",
+  ]}
+
+get_vocab:
+  - {dir: /home/zhengx/data/Laws-ende,
+    files: [
+     "Laws-train.token.clean.bpe.en",
+  ], vocab_file: /home/zhengx/data/Laws-ende/vocab.en}
+
+  - {dir: /home/zhengx/data/Laws-ende,
+    files: [
+     "Laws-train.token.clean.bpe.de",
+  ], vocab_file: /home/zhengx/data/Laws-ende/vocab.de}
+
+concat:
+  - {files: [], obj_file: }
+
+save_tsv:
+  - {tsv_format: { src: /home/zhengx/data/Laws-ende/Laws-train.token.clean.bpe.de, 
+                   trg: /home/zhengx/data/Laws-ende/Laws-train.token.clean.bpe.en}, 
+     tsv_path: /home/zhengx/data/Laws-ende/Laws-train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/Laws-ende/Laws-dev.token.bpe.de, 
+                   trg: /home/zhengx/data/Laws-ende/Laws-dev.token.bpe.en}, 
+     tsv_path: /home/zhengx/data/Laws-ende/Laws-dev.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/Laws-ende/Laws-test.token.bpe.de, 
+                   trg: /home/zhengx/data/Laws-ende/Laws-test.token.bpe.en}, 
+     tsv_path: /home/zhengx/data/Laws-ende/Laws-test.tsv}
+
+
+

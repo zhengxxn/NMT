@@ -1,0 +1,144 @@
+Annotation:
+  - preprocess WMT2015-deen
+
+# lowercase:
+  # - {language: en, dir: /home/zhengx/data/Laws-ende, files: [Laws-train.en, Laws-dev.en, Laws-test.en]}
+
+tokenize:
+  - {language: en, dir: /home/zhengx/data/wmt2015-ende, files: [train.en, newstest2013.en]}
+  - {language: de, dir: /home/zhengx/data/wmt2015-ende, files: [train.de, newstest2013.de]}
+
+
+clean:
+  - {min_len: 1, max_len: 80, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt2015-ende/train.token}
+
+train_truecase:
+  - {
+    files: [
+      /home/zhengx/data/wmt2015-ende/train.token.clean.en
+    ],
+    model:
+      /home/zhengx/data/wmt2015-ende/truecase-model.en
+  }
+  - {
+    files: [
+      /home/zhengx/data/wmt2015-ende/train.token.clean.de
+    ],
+    model:
+      /home/zhengx/data/wmt2015-ende/truecase-model.de
+  }
+
+truecase: 
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/wmt2015-ende/train.token.clean.en, 
+    output_file: /home/zhengx/data/wmt2015-ende/train.token.clean.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/wmt2015-ende/train.token.clean.de, 
+    output_file: /home/zhengx/data/wmt2015-ende/train.token.clean.tc.de
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/wmt2015-ende/newstest2013.token.en, 
+    output_file: /home/zhengx/data/wmt2015-ende/newstest2013.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/wmt2015-ende/newstest2013.token.de, 
+    output_file: /home/zhengx/data/wmt2015-ende/newstest2013.token.tc.de
+  }
+
+learn_bpe:
+  - {bpe_operation: 32000, code_file: /home/zhengx/data/wmt2015-ende/code32k.en,
+     dir: /home/zhengx/data/wmt2015-ende,
+     files: [
+     "train.token.clean.tc.en",
+  ]}
+  - {bpe_operation: 32000, code_file: /home/zhengx/data/wmt2015-ende/code32k.de,
+     dir: /home/zhengx/data/wmt2015-ende,
+     files: [
+     "train.token.clean.tc.de",
+  ]}
+
+
+apply_bpe:
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.en,
+     dir: /home/zhengx/data/wmt2015-ende,
+     files: [
+     "train.token.clean.tc.en",
+     "newstest2013.token.tc.en",
+  ]}
+
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.de,
+     dir: /home/zhengx/data/wmt2015-ende,
+     files: [
+     "train.token.clean.tc.de",
+     "newstest2013.token.tc.de",
+  ]}
+
+get_vocab:
+  - {dir: /home/zhengx/data/wmt2015-ende,
+    files: [
+     "train.token.clean.tc.bpe.en",
+     "train.token.clean.tc.bpe.de"
+  ], vocab_file: /home/zhengx/data/wmt2015-ende/vocab}
+
+  # - {dir: /home/zhengx/data/wmt2015-ende,
+  #   files: [
+  #    "train.token.clean.tc.bpe.de",
+  # ], vocab_file: /home/zhengx/data/wmt2015-ende/vocab.de}
+
+get_position_index:
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/wmt2015-ende,
+    raw_file: train.token.clean.tc.bpe.en,
+    outer_index_file: train.outer.index.en,
+    inner_index_file: train.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/wmt2015-ende,
+    raw_file: train.token.clean.tc.bpe.de,
+    outer_index_file: train.outer.index.de,
+    inner_index_file: train.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/wmt2015-ende,
+    raw_file: newstest2013.token.tc.bpe.en,
+    outer_index_file: newstest2013.outer.index.en,
+    inner_index_file: newstest2013.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/wmt2015-ende,
+    raw_file: newstest2013.token.tc.bpe.de,
+    outer_index_file: newstest2013.outer.index.de,
+    inner_index_file: newstest2013.inner.index.de
+  }
+
+concat:
+  - {files: [], obj_file: }
+
+save_tsv:
+  - {tsv_format: { src: /home/zhengx/data/wmt2015-ende/train.token.clean.tc.bpe.en, 
+                   trg: /home/zhengx/data/wmt2015-ende/train.token.clean.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/wmt2015-ende/train.outer.index.en,
+                   src_inner_index: /home/zhengx/data/wmt2015-ende/train.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/wmt2015-ende/train.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/wmt2015-ende/train.inner.index.de,}, 
+     tsv_path: /home/zhengx/data/wmt2015-ende/train-pos.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt2015-ende/newstest2013.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/wmt2015-ende/newstest2013.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/wmt2015-ende/newstest2013.outer.index.en,
+                   src_inner_index: /home/zhengx/data/wmt2015-ende/newstest2013.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/wmt2015-ende/newstest2013.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/wmt2015-ende/newstest2013.inner.index.de,},      
+    tsv_path: /home/zhengx/data/wmt2015-ende/newstest2013-pos.tsv}
+
+
+

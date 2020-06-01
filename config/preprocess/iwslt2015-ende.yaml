@@ -1,0 +1,195 @@
+Annotation:
+  - preprocess iwslt2015-ende
+
+# lowercase:
+  # - {language: en, dir: /home/zhengx/data/Laws-ende, files: [Laws-train.en, Laws-dev.en, Laws-test.en]}
+
+tokenize:
+  - {language: en, dir: /home/zhengx/data/IWSLT2015-ende, files: [IWSLT15.TED.train2015.en-de.en,
+                                                                  IWSLT15.TED.tst2012.en-de.en,
+                                                                  IWSLT15.TED.tst2013.en-de.en,
+                                                                  IWSLT15.TED.tst2014.en-de.en,
+                                                                  IWSLT15.TEDX.dev2012.en-de.en]}
+  - {language: de, dir: /home/zhengx/data/IWSLT2015-ende, files: [IWSLT15.TED.train2015.en-de.de,
+                                                                  IWSLT15.TED.tst2012.en-de.de,
+                                                                  IWSLT15.TED.tst2013.en-de.de,
+                                                                  IWSLT15.TED.tst2014.en-de.de,
+                                                                  IWSLT15.TEDX.dev2012.en-de.de]}
+
+clean:
+  - {min_len: 1, max_len: 80, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.train2015.en-de.token}
+
+truecase: 
+  # - {
+  #   model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+  #   file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.train2015.en-de.token.clean.en, 
+  #   output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.train2015.en-de.token.clean.tc.en
+  # }
+  # - {
+  #   model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+  #   file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.train2015.en-de.token.clean.de, 
+  #   output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.train2015.en-de.token.clean.tc.de
+  # }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2012.en-de.token.en, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2012.en-de.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2012.en-de.token.de, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2012.en-de.token.tc.de
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2013.en-de.token.en, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2013.en-de.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2013.en-de.token.de, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2013.en-de.token.tc.de
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2014.en-de.token.en, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2014.en-de.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2014.en-de.token.de, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2014.en-de.token.tc.de
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TEDX.dev2012.en-de.token.en, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TEDX.dev2012.en-de.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/IWSLT2015-ende/IWSLT15.TEDX.dev2012.en-de.token.de, 
+    output_file: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TEDX.dev2012.en-de.token.tc.de
+  }
+
+apply_bpe:
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.en,
+     dir: /home/zhengx/data/IWSLT2015-ende,
+     files: [
+    #  "IWSLT15.TED.train2015.en-de.token.clean.tc.en",
+     "IWSLT15.TED.tst2012.en-de.token.tc.en",
+     "IWSLT15.TED.tst2013.en-de.token.tc.en",
+     "IWSLT15.TED.tst2014.en-de.token.tc.en",
+     "IWSLT15.TEDX.dev2012.en-de.token.tc.en"
+  ]}
+
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.de,
+     dir: /home/zhengx/data/IWSLT2015-ende,
+     files: [
+    #  "IWSLT15.TED.train2015.en-de.token.clean.tc.de",
+     "IWSLT15.TED.tst2012.en-de.token.tc.de",
+     "IWSLT15.TED.tst2013.en-de.token.tc.de",
+     "IWSLT15.TED.tst2014.en-de.token.tc.de",
+     "IWSLT15.TEDX.dev2012.en-de.token.tc.de"
+  ]}
+
+get_position_index:
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.train2015.en-de.token.clean.tc.bpe.en,
+    outer_index_file: train2015.outer.index.en,
+    inner_index_file: train2015.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.train2015.en-de.token.clean.tc.bpe.de,
+    outer_index_file: train2015.outer.index.de,
+    inner_index_file: train2015.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.tst2012.en-de.token.tc.bpe.en,
+    outer_index_file: tst2012.outer.index.en,
+    inner_index_file: tst2012.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.tst2012.en-de.token.tc.bpe.en,
+    outer_index_file: tst2012.outer.index.de,
+    inner_index_file: tst2012.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.tst2013.en-de.token.tc.bpe.en,
+    outer_index_file: tst2013.outer.index.en,
+    inner_index_file: tst2013.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.tst2013.en-de.token.tc.bpe.en,
+    outer_index_file: tst2013.outer.index.de,
+    inner_index_file: tst2013.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.tst2014.en-de.token.tc.bpe.en,
+    outer_index_file: tst2014.outer.index.en,
+    inner_index_file: tst2014.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/IWSLT2015-ende,
+    raw_file: IWSLT15.TED.tst2014.en-de.token.tc.bpe.en,
+    outer_index_file: tst2014.outer.index.de,
+    inner_index_file: tst2014.inner.index.de
+  }
+
+
+concat:
+  - {files: [], obj_file: }
+
+save_tsv:
+  - {tsv_format: { src: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.train2015.en-de.token.clean.tc.bpe.en, 
+                   trg: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.train2015.en-de.token.clean.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/IWSLT2015-ende/train2015.outer.index.en,
+                   src_inner_index: /home/zhengx/data/IWSLT2015-ende/train2015.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/IWSLT2015-ende/train2015.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/IWSLT2015-ende/train2015.inner.index.de}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/iwslt2015-ende-share/train2015-pos.en-de.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2012.en-de.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2012.en-de.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/IWSLT2015-ende/tst2012.outer.index.en,
+                   src_inner_index: /home/zhengx/data/IWSLT2015-ende/tst2012.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/IWSLT2015-ende/tst2012.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/IWSLT2015-ende/tst2012.inner.index.de}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/iwslt2015-ende-share/tst2012-pos.en-de.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2013.en-de.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2013.en-de.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/IWSLT2015-ende/tst2013.outer.index.en,
+                   src_inner_index: /home/zhengx/data/IWSLT2015-ende/tst2013.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/IWSLT2015-ende/tst2013.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/IWSLT2015-ende/tst2013.inner.index.de}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/iwslt2015-ende-share/tst2013-pos.en-de.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2014.en-de.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TED.tst2014.en-de.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/IWSLT2015-ende/tst2014.outer.index.en,
+                   src_inner_index: /home/zhengx/data/IWSLT2015-ende/tst2014.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/IWSLT2015-ende/tst2014.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/IWSLT2015-ende/tst2014.inner.index.de}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/iwslt2015-ende-share/tst2014-pos.en-de.tsv}
+
+  # - {tsv_format: { src: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TEDX.dev2012.en-de.token.tc.bpe.en, 
+  #                  trg: /home/zhengx/data/IWSLT2015-ende/IWSLT15.TEDX.dev2012.en-de.token.tc.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/iwslt2015-ende-share/IWSLT15.TEDX.dev2012.en-de.tsv}
+
+
+

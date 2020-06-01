@@ -1,0 +1,142 @@
+Annotation:
+  - preprocess Laws-ende
+
+# lowercase:
+  # - {language: en, dir: /home/zhengx/data/Laws-ende, files: [Laws-train.en, Laws-dev.en, Laws-test.en]}
+
+tokenize:
+  - {language: en, dir: /home/zhengx/data/Laws-ende, files: [Laws-train-select.en,
+                                                                  Laws-dev.en,
+                                                                  Laws-test.en]}
+  - {language: de, dir: /home/zhengx/data/Laws-ende, files: [Laws-train-select.de,
+                                                                  Laws-dev.de,
+                                                                  Laws-test.de]}
+
+clean:
+  - {min_len: 1, max_len: 80, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/Laws-ende/Laws-train-select.token}
+
+truecase: 
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/Laws-ende/Laws-train-select.token.clean.en, 
+    output_file: /home/zhengx/data/Laws-ende/Laws-train-select.token.clean.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/Laws-ende/Laws-train-select.token.clean.de, 
+    output_file: /home/zhengx/data/Laws-ende/Laws-train-select.token.clean.tc.de
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/Laws-ende/Laws-dev.token.en, 
+    output_file: /home/zhengx/data/Laws-ende/Laws-dev.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/Laws-ende/Laws-dev.token.de, 
+    output_file: /home/zhengx/data/Laws-ende/Laws-dev.token.tc.de
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/Laws-ende/Laws-test.token.en, 
+    output_file: /home/zhengx/data/Laws-ende/Laws-test.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/Laws-ende/Laws-test.token.de, 
+    output_file: /home/zhengx/data/Laws-ende/Laws-test.token.tc.de
+  }
+
+
+apply_bpe:
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.en,
+     dir: /home/zhengx/data/Laws-ende,
+     files: [
+     "Laws-train-select.token.clean.tc.en",
+     "Laws-dev.token.tc.en",
+     "Laws-test.token.tc.en",
+  ]}
+
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.de,
+     dir: /home/zhengx/data/Laws-ende,
+     files: [
+     "Laws-train-select.token.clean.tc.de",
+     "Laws-dev.token.tc.de",
+     "Laws-test.token.tc.de",
+  ]}
+
+concat:
+  - {files: [], obj_file: }
+
+get_position_index:
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/Laws-ende,
+    raw_file: Laws-train-select.token.clean.tc.bpe.en,
+    outer_index_file: Laws-train.outer.index.en,
+    inner_index_file: Laws-train.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/Laws-ende,
+    raw_file: Laws-train-select.token.clean.tc.bpe.de,
+    outer_index_file: Laws-train.outer.index.de,
+    inner_index_file: Laws-train.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/Laws-ende,
+    raw_file: Laws-dev.token.tc.bpe.en,
+    outer_index_file: Laws-dev.outer.index.en,
+    inner_index_file: Laws-dev.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/Laws-ende,
+    raw_file: Laws-dev.token.tc.bpe.de,
+    outer_index_file: Laws-dev.outer.index.de,
+    inner_index_file: Laws-dev.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/Laws-ende,
+    raw_file: Laws-test.token.tc.bpe.en,
+    outer_index_file: Laws-test.outer.index.en,
+    inner_index_file: Laws-test.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/Laws-ende,
+    raw_file: Laws-test.token.tc.bpe.de,
+    outer_index_file: Laws-test.outer.index.de,
+    inner_index_file: Laws-test.inner.index.de
+  }
+
+
+save_tsv:
+  - {tsv_format: { src: /home/zhengx/data/Laws-ende/Laws-train-select.token.clean.tc.bpe.en, 
+                   trg: /home/zhengx/data/Laws-ende/Laws-train-select.token.clean.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/Laws-ende/Laws-train.outer.index.en,
+                   src_inner_index: /home/zhengx/data/Laws-ende/Laws-train.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/Laws-ende/Laws-train.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/Laws-ende/Laws-train.inner.index.de,}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/laws-ende-share/train-pos.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/Laws-ende/Laws-dev.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/Laws-ende/Laws-dev.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/Laws-ende/Laws-dev.outer.index.en,
+                   src_inner_index: /home/zhengx/data/Laws-ende/Laws-dev.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/Laws-ende/Laws-dev.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/Laws-ende/Laws-dev.inner.index.de,}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/laws-ende-share/dev-pos.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/Laws-ende/Laws-test.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/Laws-ende/Laws-test.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/Laws-ende/Laws-test.outer.index.en,
+                   src_inner_index: /home/zhengx/data/Laws-ende/Laws-test.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/Laws-ende/Laws-test.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/Laws-ende/Laws-test.inner.index.de,}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/laws-ende-share/test-pos.tsv}
+
+
+

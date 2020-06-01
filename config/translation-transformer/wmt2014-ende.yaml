@@ -1,0 +1,161 @@
+Annotation:
+  device: v1003 0
+  language: en-de
+  dataset: wmt2014 en-de, bpe 32k, vocab 37k, share vocab
+  what: transformer, 
+  hyper_parameter: 
+  log_file: 
+
+Dataset:
+  train_dataset_path:
+    - "/home/zhengx/data/wmt2014-ende-wotc-share/train.tsv" # bpe size 32000
+
+  dev_dataset_path:
+    - "/home/zhengx/data/wmt2014-ende-wotc-share/newstest2013.tsv"
+
+  test_dataset_path:
+    - "/home/zhengx/data/wmt2014-ende-wotc-share/newstest2013.tsv"
+    - "/home/zhengx/data/wmt2014-ende-wotc-share/newstest2014.tsv"
+  
+  target_language: de
+  detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
+  detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
+  combine_train_datasets: False
+  filter_len: 200
+
+Vocab:
+  use_bpe: True
+  share_bpe:
+  src:
+    file: "/home/zhengx/data/wmt2014-ende-wotc-share/vocab"
+    max_size: 35000
+  trg:
+    file: "/home/zhengx/data/wmt2014-ende-wotc-share/vocab"
+    max_size: 35000
+
+Model:
+  feature_size: 512
+  feedforward_dim: 2048
+  head_num: 8
+  dropout_rate: 0.1
+  num_layers: 6
+
+  share_enc_dec_embedding: True
+  share_decoder_embedding: True
+
+  # generator
+  generator_bias: False
+  # criterion kl_divergence or nll
+  criterion: kl_divergence
+  label_smoothing: 0.1
+
+  
+
+Optimizer:
+  beta2: 0.998
+  lr_scheduler:
+    name: noam
+    factor: 2.0
+    warmup_steps: 8000
+    model_size: 512
+  grad_clip: -1.0
+
+
+Train:
+  use_multiple_gpu: False
+
+  random_seed: 1234
+  load_exist_model: False # load model
+  model_load_path:
+  load_optimizer: False  # load model and optimizer
+  optimizer_path: 
+
+  batch_size: 12000
+  update_batch_count: 2
+  epoch_num: 50
+
+Validation:
+  
+  batch_size: 64
+
+  loss_validation:
+    start_on_steps: 1000
+    frequency: 500
+  
+  bleu_validation:
+    start_on_steps: 10000
+    frequency: 2000
+
+    tokenize: intl
+    target_language: de
+    use_bpe: True
+    ref: /home/zhengx/data/wmt2014-ende-wotc-share/newstest2013.de
+    detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
+    detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
+
+    beam_search:
+      beam_size: 4
+      max_steps: 150
+      length_penalty: False
+      alpha: 0.6
+
+  # Bleu:
+  #   gram: 4
+  #   level: word
+
+Test:
+  refs: [
+    /home/zhengx/data/wmt2014-ende-wotc-share/newstest2013.de,
+    /home/zhengx/data/wmt2014-ende-wotc-share/newstest2014.de
+  ]
+
+  # parameter as validation
+  model_path: /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-nll/average_model
+
+  output_path:
+    - "/home/zhengx/output/wmt2014-ende-wotc/newstest2013.output"
+    - "/home/zhengx/output/wmt2014-ende-wotc/newstest2014.output"
+
+  tokenize: intl
+  target_language: de
+  use_bpe: True
+  detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
+  detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
+
+  batch_size: 24
+  tag: translation
+
+  beam_search:
+    beam_size: 4
+    max_steps: 150
+    length_penalty: True
+    alpha: 0.6
+
+
+Record:
+  training_record_path: "/home/user_data55/zhengx/project/record-new/wmt2014-ende-wotc/12000-2-kld"
+  
+  model_record:
+    path: /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-kld
+    best_model_save:
+      loss_best: True
+      bleu_best: True
+      save_optimizer: False
+      save_lr_scheduler: False
+    
+    # save last checkpoint
+    last_checkpoint_save:
+      start_on_steps: 50000
+      frequency: 2000
+      save_optimizer: False
+      save_lr_scheduler: False
+      save_checkpoint_count: 5
+
+AverageModel:
+  load_path:
+    -  /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-nll/checkpoint0/model
+    -  /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-nll/checkpoint1/model
+    -  /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-nll/checkpoint2/model
+    -  /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-nll/checkpoint3/model
+    -  /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-nll/checkpoint4/model
+  save_path: /home/zhengx/model_save/wmt2014-ende-wotc/12000-2-nll/average_model

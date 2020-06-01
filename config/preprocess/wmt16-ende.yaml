@@ -1,0 +1,19 @@
+get_vocab:
+  - {dir: /home/zhengx/data/wmt16-ende,
+    files: [
+     "train.tok.clean.bpe.32000.en",
+     "train.tok.clean.bpe.32000.de",
+  ], vocab_file: /home/zhengx/data/wmt16-ende/vocab}
+
+save_tsv:
+  - {tsv_format: { src: /home/zhengx/data/wmt16-ende/train.tok.clean.bpe.32000.en, 
+                   trg: /home/zhengx/data/wmt16-ende/train.tok.clean.bpe.32000.de}, 
+     tsv_path: /home/zhengx/data/wmt16-ende-share/train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt16-ende/newstest2014.tok.bpe.32000.en, 
+                   trg: /home/zhengx/data/wmt16-ende/newstest2014.tok.bpe.32000.de}, 
+     tsv_path: /home/zhengx/data/wmt16-ende-share/newstest2014.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt16-ende/newstest2013.tok.bpe.32000.en, 
+                   trg: /home/zhengx/data/wmt16-ende/newstest2013.tok.bpe.32000.de}, 
+     tsv_path: /home/zhengx/data/wmt16-ende-share/newstest2013.tsv}

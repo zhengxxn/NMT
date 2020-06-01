@@ -1,0 +1,138 @@
+Annotation:
+  - preprocess medical-ende
+
+# lowercase:
+  # - {language: en, dir: /home/zhengx/data/Medical-ende, files: [Medical-train.en, Medical-dev.en, Medical-test.en]}
+
+tokenize:
+  - {language: en, dir: /home/zhengx/data/Medical-ende, files: [Medical-train-select.en,
+                                                                Medical-dev.en,
+                                                                Medical-test.en]}
+  - {language: de, dir: /home/zhengx/data/Medical-ende, files: [Medical-train-select.de,
+                                                                Medical-dev.de,
+                                                                Medical-test.de]}
+
+clean:
+  - {min_len: 1, max_len: 80, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/Medical-ende/Medical-train-select.token}
+
+truecase: 
+  # - {
+  #   model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+  #   file : /home/zhengx/data/Medical-ende/Medical-train-select.token.clean.en, 
+  #   output_file: /home/zhengx/data/Medical-ende/Medical-train-select.token.clean.tc.en
+  # }
+  # - {
+  #   model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+  #   file : /home/zhengx/data/Medical-ende/Medical-train-select.token.clean.de, 
+  #   output_file: /home/zhengx/data/Medical-ende/Medical-train-select.token.clean.tc.de
+  # }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/Medical-ende/Medical-dev.token.en, 
+    output_file: /home/zhengx/data/Medical-ende/Medical-dev.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/Medical-ende/Medical-dev.token.de, 
+    output_file: /home/zhengx/data/Medical-ende/Medical-dev.token.tc.de
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.en, 
+    file : /home/zhengx/data/Medical-ende/Medical-test.token.en, 
+    output_file: /home/zhengx/data/Medical-ende/Medical-test.token.tc.en
+  }
+  - {
+    model: /home/zhengx/data/wmt2015-ende/truecase-model.de, 
+    file : /home/zhengx/data/Medical-ende/Medical-test.token.de, 
+    output_file: /home/zhengx/data/Medical-ende/Medical-test.token.tc.de
+  }
+
+
+apply_bpe:
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.en,
+     dir: /home/zhengx/data/Medical-ende,
+     files: [
+    #  "Medical-train-select.token.clean.tc.en",
+     "Medical-dev.token.tc.en",
+     "Medical-test.token.tc.en",
+  ]}
+
+  - {code_file: /home/zhengx/data/wmt2015-ende/code32k.de,
+     dir: /home/zhengx/data/Medical-ende,
+     files: [
+    #  "Medical-train-select.token.clean.tc.de",
+     "Medical-dev.token.tc.de",
+     "Medical-test.token.tc.de",
+  ]}
+
+get_position_index:
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/Medical-ende,
+    raw_file: Medical-train-select.token.clean.tc.bpe.en,
+    outer_index_file: Medical-train.outer.index.en,
+    inner_index_file: Medical-train.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/Medical-ende,
+    raw_file: Medical-train-select.token.clean.tc.bpe.de,
+    outer_index_file: Medical-train.outer.index.de,
+    inner_index_file: Medical-train.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/Medical-ende,
+    raw_file: Medical-dev.token.tc.bpe.en,
+    outer_index_file: Medical-dev.outer.index.en,
+    inner_index_file: Medical-dev.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/Medical-ende,
+    raw_file: Medical-dev.token.tc.bpe.de,
+    outer_index_file: Medical-dev.outer.index.de,
+    inner_index_file: Medical-dev.inner.index.de
+  }
+  - {
+    is_target: false,
+    dir: /home/zhengx/data/Medical-ende,
+    raw_file: Medical-test.token.tc.bpe.en,
+    outer_index_file: Medical-test.outer.index.en,
+    inner_index_file: Medical-test.inner.index.en
+  }
+  - {
+    is_target: true,
+    dir: /home/zhengx/data/Medical-ende,
+    raw_file: Medical-test.token.tc.bpe.de,
+    outer_index_file: Medical-test.outer.index.de,
+    inner_index_file: Medical-test.inner.index.de
+  }
+
+
+save_tsv:
+  - {tsv_format: { src: /home/zhengx/data/Medical-ende/Medical-train-select.token.clean.tc.bpe.en, 
+                   trg: /home/zhengx/data/Medical-ende/Medical-train-select.token.clean.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/Medical-ende/Medical-train.outer.index.en,
+                   src_inner_index: /home/zhengx/data/Medical-ende/Medical-train.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/Medical-ende/Medical-train.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/Medical-ende/Medical-train.inner.index.de,}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/medical-ende-share/train-pos.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/Medical-ende/Medical-dev.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/Medical-ende/Medical-dev.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/Medical-ende/Medical-dev.outer.index.en,
+                   src_inner_index: /home/zhengx/data/Medical-ende/Medical-dev.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/Medical-ende/Medical-dev.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/Medical-ende/Medical-dev.inner.index.de,}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/medical-ende-share/dev-pos.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/Medical-ende/Medical-test.token.tc.bpe.en, 
+                   trg: /home/zhengx/data/Medical-ende/Medical-test.token.tc.bpe.de,
+                   src_outer_index: /home/zhengx/data/Medical-ende/Medical-test.outer.index.en,
+                   src_inner_index: /home/zhengx/data/Medical-ende/Medical-test.inner.index.en,
+                   trg_outer_index: /home/zhengx/data/Medical-ende/Medical-test.outer.index.de,
+                   trg_inner_index: /home/zhengx/data/Medical-ende/Medical-test.inner.index.de,}, 
+     tsv_path: /home/zhengx/data/adapter_dataset/medical-ende-share/test-pos.tsv}
+
+

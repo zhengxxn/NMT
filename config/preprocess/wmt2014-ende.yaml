@@ -1,0 +1,125 @@
+Annotation:
+  - preprocess wmt2014-ende
+
+# lowercase:
+  # - {language: en, dir: /home/zhengx/data/Laws-ende, files: [Laws-train.en, Laws-dev.en, Laws-test.en]}
+
+# tokenize:
+#   - {language: en, dir: /home/zhengx/data/WMT2IWSLT-ende, files: [outdomain-ende.en, newstest2013.en]}
+#   - {language: de, dir: /home/zhengx/data/WMT2IWSLT-ende, files: [outdomain-ende.de, newstest2013.de]}
+
+
+# clean:
+  # - {min_len: 1, max_len: 50, src_language: de, trg_language: en, file_prefix: /home/zhengx/data/WMT2IWSLT-ende/outdomain-ende.token}
+
+# train_truecase:
+#   - {
+#     files: [
+#       /home/zhengx/data/wmt2014-ende/train.tok.clean.en
+#     ],
+#     model:
+#       /home/zhengx/data/wmt2014-ende/truecase-model.en
+#   }
+#   - {
+#     files: [
+#       /home/zhengx/data/wmt2014-ende/train.tok.clean.de
+#     ],
+#     model:
+#       /home/zhengx/data/wmt2014-ende/truecase-model.de
+#   }
+
+# truecase: 
+  # - {
+  #   model: /home/zhengx/data/wmt2014-ende/truecase-model.en, 
+  #   file : /home/zhengx/data/wmt2014-ende/train.tok.clean.en, 
+  #   output_file: /home/zhengx/data/wmt2014-ende/train.token.clean.tc.en
+  # }
+  # - {
+  #   model: /home/zhengx/data/wmt2014-ende/truecase-model.de, 
+  #   file : /home/zhengx/data/wmt2014-ende/train.tok.clean.de, 
+  #   output_file: /home/zhengx/data/wmt2014-ende/train.tok.clean.tc.de
+  # }
+  # - {
+  #   model: /home/zhengx/data/wmt2014-ende/truecase-model.en, 
+  #   file : /home/zhengx/data/wmt2014-ende/newstest2013.tok.en, 
+  #   output_file: /home/zhengx/data/wmt2014-ende/newstest2013.token.tc.en
+  # }
+  # - {
+  #   model: /home/zhengx/data/wmt2014-ende/truecase-model.de, 
+  #   file : /home/zhengx/data/wmt2014-ende/newstest2013.tok.de, 
+  #   output_file: /home/zhengx/data/wmt2014-ende/newstest2013.token.tc.de
+  # }
+  # - {
+  #   model: /home/zhengx/data/wmt2014-ende/truecase-model.en, 
+  #   file : /home/zhengx/data/wmt2014-ende/newstest2014.tok.en, 
+  #   output_file: /home/zhengx/data/wmt2014-ende/newstest2014.token.tc.en
+  # }
+  # - {
+  #   model: /home/zhengx/data/wmt2014-ende/truecase-model.de, 
+  #   file : /home/zhengx/data/wmt2014-ende/newstest2014.tok.de, 
+  #   output_file: /home/zhengx/data/wmt2014-ende/newstest2014.token.tc.de
+  # }
+
+learn_bpe:
+  - {bpe_operation: 32000, code_file: /home/zhengx/data/wmt2014-ende/code32k,
+     dir: /home/zhengx/data/wmt2014-ende,
+     files: [
+     "train.tok.clean.en",
+     "train.tok.clean.de"
+  ]}
+
+  # - {bpe_operation: 32000, code_file: /home/zhengx/data/WMT2IWSLT-ende/code32k.en,
+  #    dir: /home/zhengx/data/WMT2IWSLT-ende,
+  #    files: [
+  #    "outdomain-ende.token.clean.en",
+  # ]}
+
+
+apply_bpe:
+  - {code_file: /home/zhengx/data/wmt2014-ende/code32k,
+     dir: /home/zhengx/data/wmt2014-ende,
+     files: [
+     "train.tok.clean.en",
+     "train.tok.clean.de",
+     "newstest2013.tok.en",
+     "newstest2013.tok.de",
+     "newstest2014.tok.en",
+     "newstest2014.tok.de"
+  ]}
+
+  # - {code_file: /home/zhengx/data/WMT2IWSLT-ende/code32k.en,
+  #    dir: /home/zhengx/data/WMT2IWSLT-ende,
+  #    files: [
+  #    "outdomain-ende.token.clean.en",
+  #    "newstest2013.token.en",
+  # ]}
+
+get_vocab:
+  - {dir: /home/zhengx/data/wmt2014-ende,
+    files: [
+     "train.tok.clean.bpe.en",
+     "train.tok.clean.bpe.de",
+  ], vocab_file: /home/zhengx/data/wmt2014-ende/vocab}
+
+  # - {dir: /home/zhengx/data/WMT2IWSLT-ende,
+  #   files: [
+  #    "outdomain-ende.token.clean.bpe.de",
+  # ], vocab_file: /home/zhengx/data/WMT2IWSLT-ende/vocab.de}
+
+concat:
+  - {files: [], obj_file: }
+
+save_tsv:
+  # - {tsv_format: { src: /home/zhengx/data/wmt2014-ende/train.tok.clean.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt2014-ende/train.tok.clean.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt2014-ende-share/train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt2014-ende/newstest2013.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt2014-ende/newstest2013.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt2014-ende-share/newstest2013.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt2014-ende/newstest2014.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt2014-ende/newstest2014.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt2014-ende-share/newstest2014.tsv}
+
+
