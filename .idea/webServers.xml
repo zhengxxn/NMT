@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="d79931c2-8911-4c19-a075-23ae70102d0b" name="titan2">
+        <fileTransfer rootFolder="/home/user_data55/zhengx" accessType="SFTP" host="114.212.189.236" port="22" sshConfigId="9e7202e2-af28-4e5a-a076-a1b38641794b" sshConfig="zhengx@114.212.189.236:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
