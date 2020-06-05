@@ -87,7 +87,7 @@ class TransformerEncoder(nn.Module):
         self.layers = clones(layer, num_layers)
         self.layer_norm = nn.LayerNorm(feature_size)
 
-    def forward(self, x, src_mask, src_lengths=None, target_domain=None):
+    def forward(self, x, src_mask, target_domain=None):
         layers_adapter_output = []
         for layer in self.layers:
             x = layer(x, src_mask, target_domain)

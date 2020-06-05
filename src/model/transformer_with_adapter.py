@@ -58,7 +58,7 @@ class TransformerWithAdapter(nn.Module):
 
         assert src_mask is not None
         self.target_domain = target_domain
-
+        # print('model ', target_domain)
         encoder_state = self.encode(src, src_mask, target_domain)
         decoder_state = {
             'memory': encoder_state['memory'],
@@ -134,7 +134,8 @@ class TransformerWithAdapter(nn.Module):
 
     def encode(self, src, src_mask, target_domain):
         input_embedding = self.src_embedding_layer(src)
-        encoder_state = self.encoder(input_embedding, src_mask, target_domain)
+        # print('encode ', target_domain)
+        encoder_state = self.encoder(input_embedding, src_mask, target_domain=target_domain)
         return encoder_state
 
     def decode(self, trg_input, trg_mask, decoder_state, target_domain, test=False):
@@ -149,5 +150,5 @@ class TransformerWithAdapter(nn.Module):
                             trg_mask,
                             decoder_state['enc_attn_cache'],
                             decoder_state['self_attn_cache'],
-                            target_domain,
+                            target_domain=target_domain,
                             )

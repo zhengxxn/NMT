@@ -43,31 +43,15 @@ class TransformerEncoderLayer(nn.Module):
 
         self.adapter_dict = adapter_dict
 
-        # make adapter
-        # adapters = nn.ModuleDict({})
-        # sublayer_connection_for_adapter = nn.ModuleDict({})
-        # _adapters = collections.OrderedDict()
-        # _sublayer_connection_for_adapter = collections.OrderedDict()
-        #
-        # for domain, size in zip(adapter_dict, adapter_bottleneck_size):
-        #     _adapters[domain] = PositionWiseFeedForward(input_dim=feature_size,
-        #                                                 ff_dim=size,
-        #                                                 dropout=dropout_rate)
-        #     _sublayer_connection_for_adapter[domain] = SublayerConnection(feature_size, dropout_rate)
-        #
-        # adapters.update(_adapters)
-        # sublayer_connection_for_adapter.update(_sublayer_connection_for_adapter)
-        #
-        # self.adapters = adapters
-        # self.sublayer_connection_for_adapter = sublayer_connection_for_adapter
-
         self.domain_specific_sublayer_connection = None
-        self.init_adapter(feature_size, dropout_rate, adapter_dict)
+        self.domain_specific_adapter_for_ffn = None
+        self.domain_specific_adapter_for_self_attn = None
+        self.init_adapter(feature_size, dropout_rate, adapter_dict, adapter_bottleneck_size)
 
         self.sub_layer_connections = clones(SublayerConnection(feature_size, dropout_rate), 2)
         self.feature_size = feature_size
 
-    def init_adapter(self, feature_size, dropout_rate, adapter_dict):
+    def init_adapter(self, feature_size, dropout_rate, adapter_dict, adapter_bottleneck_size, ):
 
         # define two new sublayer_connection for each domain with domain-specific layer norm
         domain_specific_sublayer_connection = nn.ModuleDict({})
@@ -76,6 +60,23 @@ class TransformerEncoderLayer(nn.Module):
             _domain_specific_sublayer_connection[domain] = clones(SublayerConnection(feature_size, dropout_rate), 2)
         domain_specific_sublayer_connection.update(_domain_specific_sublayer_connection)
         self.domain_specific_sublayer_connection = domain_specific_sublayer_connection
+
+        # define two adapter layer for each sub_layer
+        domain_specific_adapter_for_self_attn = nn.ModuleDict({})
+        _domain_specific_adapter_for_self_attn = collections.OrderedDict()
+        domain_specific_adapter_for_ffn = nn.ModuleDict({})
+        _domain_specific_adapter_for_ffn = collections.OrderedDict()
+        for domain, domain_sz in zip(adapter_dict, adapter_bottleneck_size):
+            _domain_specific_adapter_for_self_attn[domain] = PositionWiseFeedForward(feature_size,
+                                                                                     domain_sz,
+                                                                                     dropout_rate)
+            _domain_specific_adapter_for_ffn[domain] = PositionWiseFeedForward(feature_size,
+                                                                               domain_sz,
+                                                                               dropout_rate)
+        domain_specific_adapter_for_self_attn.update(_domain_specific_adapter_for_self_attn)
+        domain_specific_adapter_for_ffn.update(_domain_specific_adapter_for_ffn)
+        self.domain_specific_adapter_for_self_attn = domain_specific_adapter_for_self_attn
+        self.domain_specific_adapter_for_ffn = domain_specific_adapter_for_ffn
 
     def init_adapter_parameter(self):
 
@@ -95,7 +96,7 @@ class TransformerEncoderLayer(nn.Module):
 
     def forward(self, x, src_mask, target_domain=None):
         # x + dropout(self_attention(Layer_norm(x)))
-
+        # print('encoder ', target_domain)
         if target_domain is None:
             x = self.sub_layer_connections[0](x, lambda x: self.self_attention_layer(x, x, x, src_mask))
             # x + dropout(feed forward(layer_norm(x)))
@@ -103,10 +104,15 @@ class TransformerEncoderLayer(nn.Module):
         else:
             x = self.domain_specific_sublayer_connection[target_domain][0] \
                 (x, lambda x: self.self_attention_layer(x, x, x, src_mask))
+
+            # x = x + self.domain_specific_adapter_for_self_attn[target_domain](x)
+
             x = self.domain_specific_sublayer_connection[target_domain][1](x, self.feed_forward_layer)
 
-        if target_domain is not None:
-            x = self.sublayer_connection_for_adapter[target_domain](x, self.adapters[target_domain])
+            # x = x + self.domain_specific_adapter_for_ffn[target_domain](x)
+
+        # if target_domain is not None:
+        #     x = self.sublayer_connection_for_adapter[target_domain](x, self.adapters[target_domain])
         # ref_adapter_list = []
         # if ref_domains is not None:
         #     for ref_domain in ref_domains:
@@ -117,35 +123,35 @@ class TransformerEncoderLayer(nn.Module):
 
 class TransformerEncoder(nn.Module):
     def __init__(self, feature_size, layer: TransformerEncoderLayer, num_layers: int,
-                 adapter_dict,):
+                 adapter_dict, ):
         super().__init__()
 
         self.layers = clones(layer, num_layers)
         self.layer_norm = nn.LayerNorm(feature_size)
 
-        self.layer_norm_adapters = None
+        self.domain_specific_layer_norm = None
         self.init_adapter(feature_size, adapter_dict)
 
     def init_adapter(self, feature_size, adapter_dict):
 
-        layer_norm_adapters = nn.ModuleDict({})
-        _adapters = collections.OrderedDict()
+        domain_specific_layer_norm = nn.ModuleDict({})
+        _domain_specific_layer_norm = collections.OrderedDict()
         for domain in adapter_dict:
-            _adapters[domain] = nn.LayerNorm(feature_size)
-        layer_norm_adapters.update(_adapters)
-        self.layer_norm_adapters = layer_norm_adapters
+            _domain_specific_layer_norm[domain] = nn.LayerNorm(feature_size)
+        domain_specific_layer_norm.update(_domain_specific_layer_norm)
+        self.domain_specific_layer_norm = domain_specific_layer_norm
 
     def init_adapter_parameter(self):
 
-        for domain in self.layer_norm_adapters.keys():
-            self.layer_norm_adapters[domain].weight.data.copy_(self.layer_norm.weight.data)
-            self.layer_norm_adapters[domain].bias.data.copy_(self.layer_norm.bias.data)
+        for domain in self.domain_specific_layer_norm.keys():
+            self.domain_specific_layer_norm[domain].weight.data.copy_(self.layer_norm.weight.data)
+            self.domain_specific_layer_norm[domain].bias.data.copy_(self.layer_norm.bias.data)
 
         for layer in self.layers:
             layer.init_adapter_parameter()
 
-    def forward(self, x, src_mask, src_lengths=None, target_domain=None):
-
+    def forward(self, x, src_mask, target_domain=None):
+        # print('encoder ', target_domain)
         layers_adapter_output = []
         for layer in self.layers:
             x = layer(x, src_mask, target_domain)
@@ -155,8 +161,7 @@ class TransformerEncoder(nn.Module):
         if target_domain is None:
             memory = self.layer_norm(x)
         else:
-            memory = self.layer_norm_adapters[target_domain](x)
+            memory = self.domain_specific_layer_norm[target_domain](x)
 
         return {'memory': memory,
                 'adapter_output': layers_adapter_output}
-
