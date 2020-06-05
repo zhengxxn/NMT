@@ -76,8 +76,10 @@ def make_transformer_with_houlsby_adapter(model_config, vocab):
             nn.init.xavier_uniform_(p)
 
     for name, param in model.named_parameters():
-        if param.dim() > 1 and 'adapter' in name:
+        if 'adapter' in name:
             nn.init.zeros_(param)
+        # if param.dim() > 1 and 'adapter' in name:
+        #     nn.init.zeros_(param)
 
     # init layer norm
     model.encoder.init_adapter_parameter()

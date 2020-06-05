@@ -48,7 +48,8 @@ def main():
     # make model
 
     for name, param in model.named_parameters():
-        if 'adapter' not in name or config['Train']['target_domain'] not in name:
+        if 'domain' not in name or \
+                config['Train']['target_domain'] not in name:
             param.requires_grad = False
         else:
             param.requires_grad = True
