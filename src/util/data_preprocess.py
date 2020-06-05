@@ -240,7 +240,8 @@ def tokenize(configs):
             os.system(cmd_str)
 
             with open(s_file, 'r') as f:
-                length = str(len(f.read().splitlines()))
+                length = str(len(f.read().split('\n')))
+                # length = str(len(f.read().splitlines()))
             # length = os.popen('wc -l ' + s_file).read().strip().split()[0]
 
             cmd_str = 'head -n ' + length + ' ' + temp_t_file + ' > ' + t_file
@@ -301,7 +302,7 @@ def clean(configs):
 def apply_bpe(configs):
 
     # apply_bpe_script = '../scripts/subword-nmt-master/subword_nmt/apply_bpe.py '
-    apply_bpe_script = ' subword-nmt applt-bpe '
+    apply_bpe_script = ' subword-nmt apply-bpe '
 
     for config in configs:
         dir_path = config['dir']

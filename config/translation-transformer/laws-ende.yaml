@@ -53,12 +53,16 @@ Criterion:
 
 Optimizer:
   beta2: 0.998
-  lr_rate: 0.00005
+  lr_rate: 5.0e-4
   lr_scheduler:
     name: noam
     factor: 2.0
     warmup_steps: 8000
     model_size: 512
+#    name: reduce_lr_on_loss
+#    factor: 0.5
+#    patience: 5
+#    min_lr: 5.0e-6
   grad_clip: -1.0
 
 
@@ -70,10 +74,11 @@ Train:
   model_load_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
   load_optimizer: False  # load model and optimizer
   optimizer_path:
+  load_lr_scheduler: False
   lr_scheduler_path:
 
-  batch_size: 2500
-  update_batch_count: 1
+  batch_size: 4000
+  update_batch_count: 3
   epoch_num: 500
 
 Validation:
@@ -129,10 +134,10 @@ Test:
     alpha: 0.6
 
 Record:
-  training_record_path: "/home/user_data55/zhengx/project/record-new/wmt14-2-laws/test"
+  training_record_path: "/home/user_data55/zhengx/record/wmt14-2-laws/single-2048-01"
   
   model_record:
-    path: /home/zhengx/model_save/wmt14-2-laws/test
+    path: /home/zhengx/model_save/wmt14-2-laws/single-2048-01
     best_model_save:
       loss_best: True
       bleu_best: True

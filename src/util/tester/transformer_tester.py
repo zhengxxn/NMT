@@ -20,7 +20,7 @@ class TransformerTester:
         mt_data_loader.build_iterators(device=device, build_train=False, build_dev=False, build_test=True)
 
         self.vocab = mt_data_loader.vocab
-        self.test_iterators = mt_data_loader.dev_test_iterators
+        self.test_iterators = mt_data_loader.test_iterators
 
         model_builder = ModelBuilder()
         model = model_builder.build_model(model_name=model_name,

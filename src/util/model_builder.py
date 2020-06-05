@@ -1,6 +1,7 @@
 from util.model_build.make_model.make_transformer import make_transformer
 from util.model_build.make_model.make_transformer_with_adapter import make_transformer_with_adapter
 from util.model_build.make_model.make_transformer_with_split_position import make_transformer_with_split_position
+from util.model_build.make_model.make_transformer_with_houlsby_adapter import make_transformer_with_houlsby_adapter
 
 from util.lr_scheduler.get_lr_scheduler import get_lr_scheduler
 
@@ -18,6 +19,8 @@ class ModelBuilder:
             model = make_transformer_with_adapter(model_config=model_config, vocab=vocab)
         elif model_name == 'transformer_with_split_position':
             model = make_transformer_with_split_position(model_config=model_config, vocab=vocab)
+        elif model_name == 'transformer_with_houlsby_adapter':
+            model = make_transformer_with_houlsby_adapter(model_config=model_config, vocab=vocab)
         else:
             model = None
 
