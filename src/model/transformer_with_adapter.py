@@ -68,6 +68,7 @@ class TransformerWithAdapter(nn.Module):
             'self_attn_cache': None,
             # 'encoder_adapter_output': encoder_state['adapter_output'],
         }
+
         if require_adapter_output:
             decoder_state['encoder_adapter_output'] = encoder_state['adapter_output']
 

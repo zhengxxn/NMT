@@ -1,36 +1,33 @@
 Annotation:
-  device: v1002-2
-  language: en-de
-  dataset: iwslt2015 en-de, clean 80, bpe 32k, vocab 35k
-  what: transformer, 
-  hyper_parameter: 
-  log_file: 
+  device:
+  language:
+  dataset:
+  what:
+  hyper_parameter:
+  log_file:
 
 Dataset:
   train_dataset_path:
-    - "/home/zhengx/data/adapter_dataset/laws-ende-share/train.tsv" # bpe size 32000
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train.tsv" # bpe size 32000
 
   dev_dataset_path:
-    - "/home/zhengx/data/adapter_dataset/laws-ende-share/dev.tsv"
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.tsv"
 
   test_dataset_path:
-    - "/home/zhengx/data/adapter_dataset/laws-ende-share/dev.tsv"
-    - "/home/zhengx/data/adapter_dataset/laws-ende-share/test.tsv"
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.tsv"
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-test.tsv"
 
-  target_language: de
-  detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
-  detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
   combine_train_datasets: False
-  filter_len: 150
+  filter_len: 200
 
 Vocab:
   use_bpe: True
   src:
-    file: "/home/zhengx/data/adapter_dataset/laws-ende-share/vocab.en"
-    max_size: 36000
+    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
+    max_size: 37000
   trg:
-    file: "/home/zhengx/data/adapter_dataset/laws-ende-share/vocab.de"
-    max_size: 36000
+    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
+    max_size: 37000
 
 Model:
   feature_size: 512
@@ -40,58 +37,109 @@ Model:
   num_layers: 6
   share_embedding: False
   adapter_domains: ['laws']
-  adapter_bottleneck_size: 2048
+  adapter_bottleneck_size: 512
+
+Criterion:
+  # name: nll
+  # label_smoothing: 0.1
+  # reduction: mean
+
+  name: kl_divergence
+  label_smoothing: 0.1
+  reduction: sum
 
 Optimizer:
-  factor: 2.0
-  warmup_step: 8000
-  grad_clip: 0.0
+  beta2: 0.998
+  lr_rate: 0.00005
+  lr_scheduler:
+    name: noam
+    factor: 2.0
+    warmup_steps: 8000
+    model_size: 512
+  grad_clip: -1.0
 
 
 Train:
-  current_domain: laws
-  update_batch_count: 1
+  target_domain: medical
+  use_multiple_gpu: False
 
+  random_seed: 1234
   load_exist_model: True # load model
-  model_load_path: /home/zhengx/model_save/wmt2015-ende/mt-transformer-3/model/best_model
-
+  model_load_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
   load_optimizer: False  # load model and optimizer
-  optimizer_path: 
+  optimizer_path:
 
-  batch_size: 8000
-
+  batch_size: 12000
+  update_batch_count: 1
   epoch_num: 500
-  validation_per_steps: 2000
 
 Validation:
-  ref: /home/zhengx/data/adapter_dataset/laws-ende-share/Laws-dev.de
-  option: [loss, bleu]
-  Decoding:
-    beam_size: 4
-    max_steps: 120
 
   batch_size: 64
-  Bleu:
-    gram: 4
-    level: word
+
+  loss_validation:
+    start_on_steps: 1000
+    frequency: 1000
+
+  bleu_validation:
+    start_on_steps: 2000
+    frequency: 1000
+
+    tokenize: intl
+    target_language: de
+    use_bpe: True
+    ref: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.de
+    detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
+    detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
+
+    beam_search:
+      beam_size: 4
+      max_steps: 150
+      length_penalty: True
+      alpha: 0.6
 
 Test:
-  domain: laws
   refs: [
-    /home/zhengx/data/adapter_dataset/laws-ende-share/Laws-dev.de,
-    /home/zhengx/data/adapter_dataset/laws-ende-share/Laws-test.de,
+    /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.de,
+    /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-test.de
   ]
-  batch_size: 64
-  tag: translation
-  Decoding:
-    beam_size: 4
-    max_steps: 100
-  # parameter as validation
-  model_path: /home/zhengx/model_save/laws-ende/mt-transformer-adapter-4096/model/best_model
   output_path:
-    - "/home/zhengx/output/laws-ende/dev.output"
-    - "/home/zhengx/output/laws-ende/test.output"
+    - "/home/zhengx/output/medical-ende/dev.output"
+    - "/home/zhengx/output/medical-ende/test.output"
+
+  save_in_multi_gpu: False
+  model_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
+
+  tokenize: intl
+  target_language: de
+  use_bpe: True
+  detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
+  detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
+
+  batch_size: 40
+  tag: translation
+
+  beam_search:
+    beam_size: 4
+    max_steps: 150
+    length_penalty: True
+    alpha: 0.6
 
 Record:
-  path: "/home/user_data55/zhengx/project/record-new/laws-ende/mt-transformer-adapter-update-2048"
-  model_record_path: /home/zhengx/model_save/laws-ende/mt-transformer-adapter-update-2048
+  training_record_path: "/home/user_data55/zhengx/project/record-new/wmt14-2-medical/adapter-8192"
+
+  model_record:
+    path: /home/zhengx/model_save/wmt14-2-medical/adapter-8192
+    best_model_save:
+      loss_best: True
+      bleu_best: True
+      save_optimizer: False
+      save_lr_scheduler: False
+
+    # save last checkpoint
+    last_checkpoint_save:
+      start_on_steps: 50000
+      frequency: 2000
+      save_optimizer: False
+      save_lr_scheduler: False
+      save_checkpoint_count: 0
