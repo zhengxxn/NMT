@@ -47,6 +47,9 @@ def main():
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
     # make model
 
+    model.encoder.init_adapter_parameter()
+    model.decoder.init_adapter_parameter()
+
     for name, param in model.named_parameters():
         if 'domain' not in name or \
                 config['Train']['target_domain'] not in name:

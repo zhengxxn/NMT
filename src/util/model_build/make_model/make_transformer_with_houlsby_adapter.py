@@ -82,7 +82,7 @@ def make_transformer_with_houlsby_adapter(model_config, vocab):
         #     nn.init.zeros_(param)
 
     # init layer norm
-    model.encoder.init_adapter_parameter()
-    model.decoder.init_adapter_parameter()
+    # model.encoder.init_adapter_parameter()
+    # model.decoder.init_adapter_parameter()
 
     return model
