@@ -3,6 +3,7 @@ from util.data_loader.mt_data_loader import MTDataLoader
 from util.model_builder import ModelBuilder
 from util.decoding.transformer_decoding import beam_search
 from util.convenient_funcs import create_path, tensor2str, de_bpe, get_path_prefix
+from util.batch.transformer_batch import SrcTestBatch
 from tqdm import tqdm
 import os
 import sacrebleu
@@ -120,3 +121,34 @@ class TransformerTester:
                 print()
                 print('bleu scores: ', bleu_score)
                 print()
+
+    def visualize_hidden_state(self, save_file):
+
+        for test_iterator in self.test_iterators:
+            self.model.eval()
+            with torch.no_grad():
+                with tqdm(test_iterator) as bar:
+                    bar.set_description("visualize hidden state")
+                    hidden_state_list = []
+                    for batch in bar:
+                        new_batch = SrcTestBatch(batch.src, self.vocab['src'].stoi['<pad>'])
+                        state = self.model.prepare_for_decode(new_batch.src, new_batch.src_mask)
+
+                        # [batch size, seq len, hidden size]
+                        hidden_state = state['memory']
+
+                        # [batch size, hidden size]
+                        sum_hidden_state = torch.sum(hidden_state, dim=1)
+
+                        # seq len
+                        seq_len = torch.sum(new_batch.src_mask.squeeze(1).type_as(new_batch.src), -1).unsqueeze(-1)
+                        # print(seq_len)
+
+                        # [batch size, hidden size]
+                        average_hidden_state = sum_hidden_state / seq_len.type_as(sum_hidden_state)
+
+                        hidden_state_list.append(average_hidden_state)
+
+                    hidden = torch.cat(hidden_state_list, dim=0)
+
+            torch.save(hidden, save_file)

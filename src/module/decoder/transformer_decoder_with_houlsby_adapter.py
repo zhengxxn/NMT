@@ -39,9 +39,13 @@ class TransformerDecoderLayer(nn.Module):
 
         self.domain_specific_sublayer_with_cache = None
         self.domain_specific_sublayer = None
+
         self.domain_specific_adapter_for_ffn = None
         self.domain_specific_adapter_for_self_attn = None
         self.domain_specific_adapter_for_cross_attn = None
+        self.domain_specific_sublayer_for_self_attn_adapter = None
+        self.domain_specific_sublayer_for_cross_attn_adapter = None
+        self.domain_specific_sublayer_for_ffn_adapter = None
         self.init_adapter(feature_size, dropout_rate, adapter_dict, adapter_bottleneck_size)
 
     def init_adapter(self, feature_size, dropout_rate, adapter_dict, adapter_bottleneck_size):
@@ -69,6 +73,14 @@ class TransformerDecoderLayer(nn.Module):
         _domain_specific_adapter_for_cross_attn = collections.OrderedDict()
         domain_specific_adapter_for_ffn = nn.ModuleDict({})
         _domain_specific_adapter_for_ffn = collections.OrderedDict()
+
+        domain_specific_sublayer_for_self_attn_adapter = nn.ModuleDict({})
+        domain_specific_sublayer_for_cross_attn_adapter = nn.ModuleDict({})
+        domain_specific_sublayer_for_ffn_adapter = nn.ModuleDict({})
+        _domain_specific_sublayer_for_self_attn_adapter = collections.OrderedDict()
+        _domain_specific_sublayer_for_cross_attn_adapter = collections.OrderedDict()
+        _domain_specific_sublayer_for_ffn_adapter = collections.OrderedDict()
+
         for domain, domain_sz in zip(adapter_dict, adapter_bottleneck_size):
             _domain_specific_adapter_for_self_attn[domain] = PositionWiseFeedForward(feature_size,
                                                                                      domain_sz,
@@ -80,12 +92,23 @@ class TransformerDecoderLayer(nn.Module):
                                                                                domain_sz,
                                                                                dropout_rate)
 
+            _domain_specific_sublayer_for_self_attn_adapter[domain] = SublayerConnectionWithCache(feature_size, dropout_rate)
+            _domain_specific_sublayer_for_cross_attn_adapter[domain] = SublayerConnectionWithCache(feature_size, dropout_rate)
+            _domain_specific_sublayer_for_ffn_adapter[domain] = SublayerConnection(feature_size, dropout_rate)
+
         domain_specific_adapter_for_self_attn.update(_domain_specific_adapter_for_self_attn)
         domain_specific_adapter_for_cross_attn.update(_domain_specific_adapter_for_cross_attn)
         domain_specific_adapter_for_ffn.update(_domain_specific_adapter_for_ffn)
+        domain_specific_sublayer_for_self_attn_adapter.update(_domain_specific_sublayer_for_self_attn_adapter)
+        domain_specific_sublayer_for_cross_attn_adapter.update(_domain_specific_sublayer_for_cross_attn_adapter)
+        domain_specific_sublayer_for_ffn_adapter.update(_domain_specific_sublayer_for_ffn_adapter)
+
         self.domain_specific_adapter_for_self_attn = domain_specific_adapter_for_self_attn
         self.domain_specific_adapter_for_ffn = domain_specific_adapter_for_ffn
         self.domain_specific_adapter_for_cross_attn = domain_specific_adapter_for_cross_attn
+        self.domain_specific_sublayer_for_self_attn_adapter = domain_specific_sublayer_for_self_attn_adapter
+        self.domain_specific_sublayer_for_cross_attn_adapter = domain_specific_sublayer_for_cross_attn_adapter
+        self.domain_specific_sublayer_for_ffn_adapter = domain_specific_sublayer_for_ffn_adapter
 
     def init_adapter_parameter(self):
 
@@ -150,7 +173,7 @@ class TransformerDecoderLayer(nn.Module):
                                                         enc_attn_cache=None,
                                                         self_attn_cache=self_attn_cache,
                                                         is_self_attn=True))
-
+            x = self.domain_specific_sublayer_for_self_attn_adapter(x, self.domain_specific_adapter_for_self_attn)
             # x = x + self.domain_specific_adapter_for_self_attn[target_domain](x)
 
             x, new_enc_attn_cache = self.domain_specific_sublayer_with_cache[target_domain][1] \
@@ -161,11 +184,13 @@ class TransformerDecoderLayer(nn.Module):
                                                          enc_attn_cache=enc_attn_cache,
                                                          self_attn_cache=None,
                                                          is_self_attn=False))
+            x = self.domain_specific_sublayer_for_cross_attn_adapter(x, self.domain_specific_adapter_for_cross_attn)
 
             # x = x + self.domain_specific_adapter_for_cross_attn[target_domain](x)
 
             x = self.domain_specific_sublayer[target_domain](x, self.feed_forward_layer)
 
+            x = self.domain_specific_sublayer_for_ffn_adapter(x, self.domain_specific_adapter_for_ffn)
             # x = x + self.domain_specific_adapter_for_ffn[target_domain](x)
 
         # if target_domain is not None:

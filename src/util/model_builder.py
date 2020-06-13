@@ -27,6 +27,9 @@ class ModelBuilder:
         if load_pretrained and pretrain_path is not None:
             model_dict = model.state_dict()
             pretrained_dict = torch.load(pretrain_path)
+            if model_name == 'transformer_with_adapter' and 'replace' in model_config.keys():
+                pretrained_dict = {k.replace(model_config['replace']['src'], model_config['replace']['trg']): v
+                                   for k, v in pretrained_dict.items()}
             model_dict.update(pretrained_dict)
             model.load_state_dict(model_dict)
 
