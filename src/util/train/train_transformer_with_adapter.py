@@ -52,7 +52,12 @@ def main():
             param.requires_grad = False
         else:
             param.requires_grad = True
+
     parameters = filter(lambda p: p.requires_grad, model.parameters())
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name)
 
     optimizer = model_builder.build_optimizer(parameters=parameters,
                                               optimizer_config=config['Optimizer'],

@@ -46,6 +46,7 @@ class TransformerEncoderLayer(nn.Module):
         self.domain_specific_sublayer_connection = None
         self.domain_specific_adapter_for_ffn = None
         self.domain_specific_adapter_for_self_attn = None
+        self.domain_specific_sublayer_connection_for_adapter = None
         self.init_adapter(feature_size, dropout_rate, adapter_dict, adapter_bottleneck_size)
 
         self.sub_layer_connections = clones(SublayerConnection(feature_size, dropout_rate), 2)
@@ -66,6 +67,8 @@ class TransformerEncoderLayer(nn.Module):
         _domain_specific_adapter_for_self_attn = collections.OrderedDict()
         domain_specific_adapter_for_ffn = nn.ModuleDict({})
         _domain_specific_adapter_for_ffn = collections.OrderedDict()
+        domain_specific_sublayer_connection_for_adapter = nn.ModuleDict({})
+        _domain_specific_sublayer_connection_for_adapter = collections.OrderedDict()
         for domain, domain_sz in zip(adapter_dict, adapter_bottleneck_size):
             _domain_specific_adapter_for_self_attn[domain] = PositionWiseFeedForward(feature_size,
                                                                                      domain_sz,
@@ -73,10 +76,14 @@ class TransformerEncoderLayer(nn.Module):
             _domain_specific_adapter_for_ffn[domain] = PositionWiseFeedForward(feature_size,
                                                                                domain_sz,
                                                                                dropout_rate)
+            _domain_specific_sublayer_connection_for_adapter[domain] = clones(SublayerConnection(feature_size, dropout_rate), 2)
+
         domain_specific_adapter_for_self_attn.update(_domain_specific_adapter_for_self_attn)
         domain_specific_adapter_for_ffn.update(_domain_specific_adapter_for_ffn)
+        domain_specific_sublayer_connection_for_adapter.update(_domain_specific_sublayer_connection_for_adapter)
         self.domain_specific_adapter_for_self_attn = domain_specific_adapter_for_self_attn
         self.domain_specific_adapter_for_ffn = domain_specific_adapter_for_ffn
+        self.domain_specific_sublayer_connection_for_adapter = domain_specific_sublayer_connection_for_adapter
 
     def init_adapter_parameter(self):
 
@@ -106,9 +113,13 @@ class TransformerEncoderLayer(nn.Module):
                 (x, lambda x: self.self_attention_layer(x, x, x, src_mask))
 
             # x = x + self.domain_specific_adapter_for_self_attn[target_domain](x)
+            x = self.domain_specific_sublayer_connection_for_adapter[target_domain][0]\
+                (x, self.domain_specific_adapter_for_self_attn[target_domain])
 
             x = self.domain_specific_sublayer_connection[target_domain][1](x, self.feed_forward_layer)
 
+            x = self.domain_specific_sublayer_connection_for_adapter[target_domain][1]\
+                (x, self.domain_specific_adapter_for_ffn[target_domain])
             # x = x + self.domain_specific_adapter_for_ffn[target_domain](x)
 
         # if target_domain is not None:

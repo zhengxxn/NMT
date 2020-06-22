@@ -38,7 +38,7 @@ def main():
     dev_test_iterators = mt_data_loader.dev_test_iterators
 
     model_builder = ModelBuilder()
-    model = model_builder.build_model(model_name='transformer_with_houlsby_adapter',
+    model = model_builder.build_model(model_name='transformer_with_stacked_adapter',
                                       model_config=config['Model'],
                                       vocab=vocab,
                                       device=device,
@@ -47,15 +47,16 @@ def main():
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
     # make model
 
-    model.encoder.init_adapter_parameter()
-    model.decoder.init_adapter_parameter()
-
     for name, param in model.named_parameters():
-        if 'domain' not in name or \
-                config['Train']['target_domain'] not in name:
+        if 'adapter' not in name:
             param.requires_grad = False
         else:
             param.requires_grad = True
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name)
+
     parameters = filter(lambda p: p.requires_grad, model.parameters())
 
     optimizer = model_builder.build_optimizer(parameters=parameters,

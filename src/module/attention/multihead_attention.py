@@ -79,7 +79,10 @@ class MultiHeadedAttention(nn.Module):
         # 2) Apply attention on all the projected vectors in batch.
         # query, key, value, x [batch size, head num, seq len, head dim]
 
-        x, self.attention_weight = attention(query_up, key_up, value_up, mask=mask,
+        x, self.attention_weight = attention(query_up,
+                                             key_up,
+                                             value_up,
+                                             mask=mask,
                                              dropout_layer=self.dropout_layer)
 
         # 3) "Concat" using a view and apply a final linear.

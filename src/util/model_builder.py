@@ -2,6 +2,10 @@ from util.model_build.make_model.make_transformer import make_transformer
 from util.model_build.make_model.make_transformer_with_adapter import make_transformer_with_adapter
 from util.model_build.make_model.make_transformer_with_split_position import make_transformer_with_split_position
 from util.model_build.make_model.make_transformer_with_houlsby_adapter import make_transformer_with_houlsby_adapter
+from util.model_build.make_model.make_transformer_with_parallel_adapter import make_transformer_with_parallel_adapter
+from util.model_build.make_model.make_transformer_with_stacked_adapter import make_transformer_with_stacked_adapter
+from util.model_build.make_model.make_transformer_with_stacked_multi_head_adapter import make_transformer_with_stacked_multi_head_adapter
+from util.model_build.make_model.make_transformer_with_diff_size_stacked_adapter import make_transformer_with_diff_size_stacked_adapter
 
 from util.lr_scheduler.get_lr_scheduler import get_lr_scheduler
 
@@ -21,12 +25,25 @@ class ModelBuilder:
             model = make_transformer_with_split_position(model_config=model_config, vocab=vocab)
         elif model_name == 'transformer_with_houlsby_adapter':
             model = make_transformer_with_houlsby_adapter(model_config=model_config, vocab=vocab)
+        elif model_name == 'transformer_with_parallel_adapter':
+            model = make_transformer_with_parallel_adapter(model_config=model_config, vocab=vocab)
+        elif model_name == 'transformer_with_stacked_adapter':
+            model = make_transformer_with_stacked_adapter(model_config=model_config, vocab=vocab)
+        elif model_name == 'transformer_with_stacked_multi_head_adapter':
+            model = make_transformer_with_stacked_multi_head_adapter(model_config=model_config, vocab=vocab)
+        elif model_name == 'transformer_with_diff_size_stacked_adapter':
+            model = make_transformer_with_diff_size_stacked_adapter(model_config=model_config, vocab=vocab)
         else:
             model = None
 
         if load_pretrained and pretrain_path is not None:
             model_dict = model.state_dict()
             pretrained_dict = torch.load(pretrain_path)
+
+            if model_name == 'transformer_with_adapter' and 'replace' in model_config.keys():
+                pretrained_dict = {k.replace(model_config['replace']['src'], model_config['replace']['trg']): v
+                                   for k, v in pretrained_dict.items()}
+
             model_dict.update(pretrained_dict)
             model.load_state_dict(model_dict)
 

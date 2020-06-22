@@ -1,14 +1,11 @@
 import yaml
 import torch
-
+from util.trainer.transformer_trainer import Trainer
 from util.convenient_funcs import create_path, set_random_seed
 from util.data_loader.mt_data_loader import MTDataLoader
 from util.model_builder import ModelBuilder
-from util.trainer.adapter_trainer import Adapter_Trainer
-
 import sys
 import os
-
 global max_src_in_batch, max_tgt_in_batch
 
 
@@ -20,10 +17,14 @@ def main():
         config = yaml.load(config_file)
         create_path(config['Record']['training_record_path'])
 
+    # set random seed
+    set_random_seed(config['Train']['random_seed'])
+
     # ================================================================================== #
     # set the device
-    set_random_seed(config['Train']['random_seed'])
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # set the data fields dict['src': (name, field), 'trg': (name, field)]
 
     # load dataset
     print('load dataset ...')
@@ -38,7 +39,7 @@ def main():
     dev_test_iterators = mt_data_loader.dev_test_iterators
 
     model_builder = ModelBuilder()
-    model = model_builder.build_model(model_name='transformer_with_houlsby_adapter',
+    model = model_builder.build_model(model_name='transformer',
                                       model_config=config['Model'],
                                       vocab=vocab,
                                       device=device,
@@ -47,15 +48,22 @@ def main():
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
     # make model
 
-    model.encoder.init_adapter_parameter()
-    model.decoder.init_adapter_parameter()
-
+    # set parameters needed updated
     for name, param in model.named_parameters():
-        if 'domain' not in name or \
-                config['Train']['target_domain'] not in name:
-            param.requires_grad = False
-        else:
-            param.requires_grad = True
+        param.requires_grad = False
+        for component in config['Model']['train_component']:
+            if type(component) == str:
+                if component in name:
+                    param.requires_grad = True
+                    break
+            elif type(component) == list:
+                param.requires_grad = True
+                for sub_component in component:
+                    if sub_component not in name:
+                        param.requires_grad = False
+                if param.requires_grad:
+                    break
+
     parameters = filter(lambda p: p.requires_grad, model.parameters())
 
     optimizer = model_builder.build_optimizer(parameters=parameters,
@@ -73,7 +81,7 @@ def main():
 
     # parameters=filter(lambda p: p.requires_grad, model.parameters()))
 
-    trainer = Adapter_Trainer(
+    trainer = Trainer(
         model=model,
         criterion=criterion,
         vocab=vocab,
@@ -87,7 +95,6 @@ def main():
         validation_config=config['Validation'],
         record_config=config['Record'],
         device=device,
-        target_domain=config['Train']['target_domain'],
     )
 
     trainer.train()
