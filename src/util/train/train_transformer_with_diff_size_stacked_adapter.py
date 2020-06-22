@@ -38,7 +38,7 @@ def main():
     dev_test_iterators = mt_data_loader.dev_test_iterators
 
     model_builder = ModelBuilder()
-    model = model_builder.build_model(model_name='transformer_with_adapter',
+    model = model_builder.build_model(model_name='transformer_with_diff_size_stacked_adapter',
                                       model_config=config['Model'],
                                       vocab=vocab,
                                       device=device,
@@ -48,16 +48,16 @@ def main():
     # make model
 
     for name, param in model.named_parameters():
-        if 'adapter' not in name or config['Train']['target_domain'] not in name:
+        if 'adapter' not in name:
             param.requires_grad = False
         else:
             param.requires_grad = True
 
-    parameters = filter(lambda p: p.requires_grad, model.parameters())
-
     for name, param in model.named_parameters():
         if param.requires_grad:
-            print(name)
+            print(name, param.shape)
+
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
 
     optimizer = model_builder.build_optimizer(parameters=parameters,
                                               optimizer_config=config['Optimizer'],

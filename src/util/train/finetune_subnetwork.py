@@ -50,10 +50,20 @@ def main():
 
     # set parameters needed updated
     for name, param in model.named_parameters():
-        if 'encoder' in name or 'embedding' in name:
-            param.requires_grad = False
-        else:
-            param.requires_grad = True
+        param.requires_grad = False
+        for component in config['Model']['train_component']:
+            if type(component) == str:
+                if component in name:
+                    param.requires_grad = True
+                    break
+            elif type(component) == list:
+                param.requires_grad = True
+                for sub_component in component:
+                    if sub_component not in name:
+                        param.requires_grad = False
+                if param.requires_grad:
+                    break
+
     parameters = filter(lambda p: p.requires_grad, model.parameters())
 
     optimizer = model_builder.build_optimizer(parameters=parameters,

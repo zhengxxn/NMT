@@ -1,5 +1,6 @@
 from util.model_build.make_model.make_transformer import make_transformer
 from util.model_build.make_model.make_transformer_with_adapter import make_transformer_with_adapter
+from util.model_build.make_model.make_transformer_with_parallel_adapter import make_transformer_with_parallel_adapter
 
 
 def count_parameters(model):
@@ -15,6 +16,11 @@ model_config = {
     'generator_bias': False,
     'share_decoder_embedding': True,
     'share_enc_dec_embedding': True,
+    'domain_adapter_dict': {
+        'iwslt': {
+            'memory_count': 1024
+        }
+    },
 
     'adapter_dict': ['iwslt'],
     'adapter_bottleneck_size': [2048],
@@ -26,12 +32,47 @@ vocab = {
     'trg': [1] * 37000,
 }
 
-model = make_transformer(model_config, vocab)
+model = make_transformer_with_parallel_adapter(model_config, vocab)
 #
+
 for name, param in model.named_parameters():
     print(name)
 
-# print(count_parameters(model))
+# count_feed_forward = 0
+# for name, param in model.named_parameters():
+#     if 'feed_forward' in name:
+#         count_feed_forward += param.numel()
+# print(count_feed_forward)
+#
+# count_self_attn = 0
+# for name, param in model.named_parameters():
+#     if 'self_attention' in name:
+#         count_self_attn += param.numel()
+# print(count_self_attn)
+#
+# count_cross_attn = 0
+# for name, param in model.named_parameters():
+#     if 'cross_attention' in name:
+#         count_cross_attn += param.numel()
+# print(count_cross_attn)
+#
+# count_embedding = 0
+# for name, param in model.named_parameters():
+#     if 'embedding' in name:
+#         count_embedding += param.numel()
+# print(count_embedding)
+
+
+# count_t = count_parameters(model)
+print(count_parameters(model))
+
+# print(count_t)
+# print(count_feed_forward / count_t)
+# print(count_self_attn / count_t)
+# print(count_cross_attn / count_t)
+# print(count_embedding / count_t)
+# print(count_feed_forward / (count_t - count_embedding))
+
 
 # model2 = make_transformer_with_adapter(model_config, vocab)
 # print(count_parameters(model2))
