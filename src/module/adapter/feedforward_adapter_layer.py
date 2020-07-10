@@ -12,7 +12,7 @@ class FeedForwardAdapterLayer(nn.Module):
 
         super().__init__()
         self.w_1 = nn.Linear(input_dim, ff_dim)
-        self.w_2 = nn.Linear(ff_dim, input_dim, bias=False)
+        self.w_2 = nn.Linear(ff_dim, input_dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

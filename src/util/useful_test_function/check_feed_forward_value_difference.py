@@ -67,23 +67,60 @@ for i in range(0, 6):
     globals()['decoder_' + str(i) + '_ffn_layer_norm_bias'] = \
         model.state_dict()['decoder.layers.' + str(i) + '.sublayer.norm.bias'].numpy()
 #
-layer_norm = nn.LayerNorm(512)
-layer_norm.weight.data = torch.from_numpy(globals()['encoder_'+str(5)+'_ffn_layer_norm_weight'])
-layer_norm.bias.data = torch.from_numpy(globals()['encoder_'+str(5)+'_ffn_layer_norm_bias'])
-x = torch.randn(512)
-x = layer_norm(x)
-print(LA.norm(x.detach().numpy()))
-w = globals()['encoder_' + str(5) + '_w1_weight']
-b = globals()['encoder_' + str(5) + '_w1_bias']
-score = torch.matmul(x.unsqueeze(0), torch.from_numpy(w).t())
-print(score.shape)
-score = score.squeeze(0) - torch.from_numpy(b)
-num_pos = 0
-for i in range(score.size(0)):
-    if score[i].item() > 0:
-        num_pos += 1
-        print(score[i].item())
-print(num_pos)
+num_pos_s = [0] * 12
+position_pos_s = [[0]*2048 for i in range(0, 12)]
+for n in range(0, 100):
+    y = torch.randn(512)
+    for j in range(0, 6):
+        layer_norm = nn.LayerNorm(512)
+        layer_norm.weight.data = torch.from_numpy(globals()['encoder_'+str(j)+'_ffn_layer_norm_weight'])
+        layer_norm.bias.data = torch.from_numpy(globals()['encoder_'+str(j)+'_ffn_layer_norm_bias'])
+        # x = torch.randn(512)
+        x = layer_norm(y)
+        # print(LA.norm(x.detach().numpy()))
+        w = globals()['encoder_' + str(j) + '_w1_weight']
+        b = globals()['encoder_' + str(j) + '_w1_bias']
+        score = torch.matmul(x.unsqueeze(0), torch.from_numpy(w).t())
+        # print(score.shape)
+        score = score.squeeze(0) - torch.from_numpy(b)
+        num_pos = 0
+        for i in range(score.size(0)):
+            if score[i].item() > 0:
+                num_pos += 1
+                position_pos_s[j][i] += 1
+                # print(score[i].item())
+        num_pos_s[j] += num_pos
+        # print(num_pos)
+
+    for j in range(0, 6):
+        layer_norm = nn.LayerNorm(512)
+        layer_norm.weight.data = torch.from_numpy(globals()['decoder_'+str(j)+'_ffn_layer_norm_weight'])
+        layer_norm.bias.data = torch.from_numpy(globals()['decoder_'+str(j)+'_ffn_layer_norm_bias'])
+        # x = torch.randn(512)
+        x = layer_norm(y)
+        # print(LA.norm(x.detach().numpy()))
+        w = globals()['decoder_' + str(j) + '_w1_weight']
+        b = globals()['decoder_' + str(j) + '_w1_bias']
+        score = torch.matmul(x.unsqueeze(0), torch.from_numpy(w).t())
+        # print(score.shape)
+        score = score.squeeze(0) - torch.from_numpy(b)
+        num_pos = 0
+        for i in range(score.size(0)):
+            if score[i].item() > 0:
+                num_pos += 1
+                position_pos_s[6+j][i] += 1
+                # print(score[i].item())
+        num_pos_s[6+j] += num_pos
+        # print(num_pos)
+
+num_pos_s = [v / 100 for v in num_pos_s]
+print(np.average(num_pos_s))
+print(num_pos_s)
+with open('/Users/zx/Documents/model/wmt2014-ende/6000-4/ffn_used.txt', 'w') as f:
+    position_pos_s = [[str(count) for count in pos] for pos in position_pos_s]
+    position_pos_s = [' '.join(pos) for pos in position_pos_s]
+    position_pos_s = '\n'.join(position_pos_s)
+    f.write(position_pos_s)
 
 # w = globals()['decoder_' + str(5) + '_w1_weight']
 # for i in range(0, w.shape[0]):

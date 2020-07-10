@@ -1,11 +1,14 @@
 import yaml
 import torch
-from util.trainer.transformer_trainer import Trainer
+
 from util.convenient_funcs import create_path, set_random_seed
 from util.data_loader.mt_data_loader import MTDataLoader
 from util.model_builder import ModelBuilder
+from util.trainer.adapter_trainer import Adapter_Trainer
+
 import sys
 import os
+
 global max_src_in_batch, max_tgt_in_batch
 
 
@@ -17,14 +20,10 @@ def main():
         config = yaml.load(config_file)
         create_path(config['Record']['training_record_path'])
 
-    # set random seed
-    set_random_seed(config['Train']['random_seed'])
-
     # ================================================================================== #
     # set the device
+    set_random_seed(config['Train']['random_seed'])
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    # set the data fields dict['src': (name, field), 'trg': (name, field)]
 
     # load dataset
     print('load dataset ...')
@@ -38,18 +37,29 @@ def main():
     dev_iterators = mt_data_loader.dev_iterators
     dev_test_iterators = mt_data_loader.dev_test_iterators
 
-    # make model
     model_builder = ModelBuilder()
-    model = model_builder.build_model(model_name='transformer',
+    model = model_builder.build_model(model_name='transformer_with_synthesizer_adapter',
                                       model_config=config['Model'],
                                       vocab=vocab,
                                       device=device,
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
-    # make criterion
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
-    # make optimizer
-    optimizer = model_builder.build_optimizer(parameters=model.parameters(),
+    # make model
+
+    for name, param in model.named_parameters():
+        if 'adapter' not in name:
+            param.requires_grad = False
+        else:
+            param.requires_grad = True
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name)
+
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+
+    optimizer = model_builder.build_optimizer(parameters=parameters,
                                               optimizer_config=config['Optimizer'],
                                               load_pretrained=config['Train']['load_optimizer'],
                                               pretrain_path=config['Train']['optimizer_path'])
@@ -64,7 +74,7 @@ def main():
 
     # parameters=filter(lambda p: p.requires_grad, model.parameters()))
 
-    trainer = Trainer(
+    trainer = Adapter_Trainer(
         model=model,
         criterion=criterion,
         vocab=vocab,
@@ -78,6 +88,7 @@ def main():
         validation_config=config['Validation'],
         record_config=config['Record'],
         device=device,
+        target_domain=config['Train']['target_domain'],
     )
 
     trainer.train()

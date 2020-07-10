@@ -6,9 +6,12 @@ class SublayerConnection(nn.Module):
     A residual connection followed by a layer norm.
     Note for code simplicity the norm is first as opposed to last.
     """
-    def __init__(self, size, dropout):
+    def __init__(self,
+                 size,
+                 dropout,
+                 layer_norm_rescale=True):
         super(SublayerConnection, self).__init__()
-        self.norm = nn.LayerNorm(size)
+        self.norm = nn.LayerNorm(size, elementwise_affine=layer_norm_rescale)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
