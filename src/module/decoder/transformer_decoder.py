@@ -18,20 +18,23 @@ class TransformerDecoderLayer(nn.Module):
     "Decoder is made of self-attn, src-attn, and feed forward (defined below)"
 
     def __init__(self,
-                 feature_size,
+                 feature_size: int,
                  self_attention_layer,
                  cross_attention_layer,
                  feed_forward_layer,
-                 dropout_rate):
+                 dropout_rate: float,
+                 layer_norm_rescale: bool = True):
+
         super(TransformerDecoderLayer, self).__init__()
         self.feature_size = feature_size
-
         self.self_attention_layer = self_attention_layer
         self.cross_attention_layer = cross_attention_layer
         self.feed_forward_layer = feed_forward_layer
 
-        self.sublayer_with_cache = clones(SublayerConnectionWithCache(feature_size, dropout_rate), 2)
-        self.sublayer = SublayerConnection(feature_size, dropout_rate)
+        self.sublayer_with_cache = clones(SublayerConnectionWithCache(feature_size,
+                                                                      dropout_rate,
+                                                                      layer_norm_rescale), 2)
+        self.sublayer = SublayerConnection(feature_size, dropout_rate, layer_norm_rescale)
 
     def forward(self,
                 x,
@@ -40,6 +43,7 @@ class TransformerDecoderLayer(nn.Module):
                 trg_mask,
                 enc_attn_cache=None,
                 self_attn_cache=None):
+
         m = memory
         x, new_self_attn_cache = self.sublayer_with_cache[0] \
             (x, lambda x: self.self_attention_layer(query=x,
@@ -63,10 +67,16 @@ class TransformerDecoderLayer(nn.Module):
 
 class TransformerDecoder(nn.Module):
 
-    def __init__(self, feature_size, layer, num_layers):
+    def __init__(self,
+                 feature_size: int,
+                 layer: TransformerDecoderLayer,
+                 num_layers: int,
+                 layer_norm_rescale: bool = True):
+
         super(TransformerDecoder, self).__init__()
+
         self.layers = clones(layer, num_layers)
-        self.layer_norm = nn.LayerNorm(feature_size)
+        self.layer_norm = nn.LayerNorm(feature_size, elementwise_affine=layer_norm_rescale)
         self.num_layers = num_layers
 
     def forward(self, x,

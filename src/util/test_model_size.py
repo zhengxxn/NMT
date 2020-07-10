@@ -1,7 +1,7 @@
 from util.model_build.make_model.make_transformer import make_transformer
 from util.model_build.make_model.make_transformer_with_adapter import make_transformer_with_adapter
 from util.model_build.make_model.make_transformer_with_parallel_adapter import make_transformer_with_parallel_adapter
-
+from util.model_build.make_model.make_transformer_with_stacked_adapter import make_transformer_with_stacked_adapter
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
@@ -32,7 +32,7 @@ vocab = {
     'trg': [1] * 37000,
 }
 
-model = make_transformer_with_parallel_adapter(model_config, vocab)
+model = make_transformer_with_stacked_adapter(model_config, vocab)
 #
 
 for name, param in model.named_parameters():
