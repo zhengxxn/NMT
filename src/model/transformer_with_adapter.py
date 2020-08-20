@@ -35,18 +35,11 @@ class TransformerWithAdapter(nn.Module):
         # self.ref_domain_list = None
 
     def forward(self, src, src_mask, trg_input, trg, trg_mask, target_domain):
-        # trg_input = batch.trg_input
-        # trg_mask = batch.trg_mask
-        # trg = batch.trg
 
         decoder_state = self.prepare_for_decode(src, src_mask, target_domain, require_adapter_output=True)
 
         decoder_logits, adapter_output, _, _ = self.decode(trg_input, trg_mask, decoder_state, target_domain)
         log_probs = self.generator(decoder_logits)
-        # loss = self.criterion(
-        #     input=log_probs.contiguous().view(-1, log_probs.size(-1)),
-        #     target=trg.contiguous().view(-1)
-        # )
 
         return {'log_prob': log_probs,
                 'enc_adapter_output': decoder_state['encoder_adapter_output'],
@@ -66,7 +59,6 @@ class TransformerWithAdapter(nn.Module):
             'input': None,
             'enc_attn_cache': None,
             'self_attn_cache': None,
-            # 'encoder_adapter_output': encoder_state['adapter_output'],
         }
 
         if require_adapter_output:

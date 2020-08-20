@@ -4,7 +4,7 @@ import torch
 from util.convenient_funcs import create_path, set_random_seed
 from util.data_loader.mt_data_loader import MTDataLoader
 from util.model_builder import ModelBuilder
-from util.trainer.adapter_trainer import Adapter_Trainer
+from util.trainer.multi_adapter_trainer import MultiAdapterTrainer
 
 import sys
 import os
@@ -45,17 +45,17 @@ def main():
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
-    # make model
 
+    training_domain = config['Train']['training_domain']
     for name, param in model.named_parameters():
-        if 'adapter' not in name:
+        if 'adapter' not in name or training_domain not in name:
             param.requires_grad = False
         else:
             param.requires_grad = True
 
     for name, param in model.named_parameters():
         if param.requires_grad:
-            print(name)
+            print(name, param.shape)
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
 
@@ -74,7 +74,7 @@ def main():
 
     # parameters=filter(lambda p: p.requires_grad, model.parameters()))
 
-    trainer = Adapter_Trainer(
+    trainer = MultiAdapterTrainer(
         model=model,
         criterion=criterion,
         vocab=vocab,
@@ -88,7 +88,7 @@ def main():
         validation_config=config['Validation'],
         record_config=config['Record'],
         device=device,
-        target_domain=config['Train']['target_domain'],
+        used_domain_list=config['Train']['used_domain_list'],
     )
 
     trainer.train()

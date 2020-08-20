@@ -41,10 +41,19 @@ class RandomSynthesizer(nn.Module):
         else:
             self.r = nn.Parameter(torch.randn(head_num, max_sent_len, max_sent_len, requires_grad=True))
 
-    def forward(self):
+        self.cached = None
+
+    def forward(self, cache=False):
 
         if self.factorized:
-            random_synthesizer_weight = torch.bmm(self.r_1, self.r_2)  # [head, max_sent_len, max_sent_len]
+            if cache is False:
+                random_synthesizer_weight = torch.bmm(self.r_1, self.r_2)  # [head, max_sent_len, max_sent_len]
+            else:
+                if self.cached is None:
+                    random_synthesizer_weight = torch.bmm(self.r_1, self.r_2)
+                    self.cached = random_synthesizer_weight
+                else:
+                    random_synthesizer_weight = self.cached
         else:
             random_synthesizer_weight = self.r
 

@@ -4,10 +4,7 @@ from module.attention.multihead_attention import attention, clones
 
 
 class MultiHeadedAttentionWithCache(nn.Module):
-    """
-    MultiHead(Q, K, V) = Concat(head_1, ..., head_n) W^O, W^O is project
-    where head_i = Attention(Q*W_i^Q, K*W_i^K, V*W_i^K)
-    """
+
     def __init__(self, head_num, feature_size, dropout=0.1):
         "Take in model size and number of heads."
         super(MultiHeadedAttentionWithCache, self).__init__()

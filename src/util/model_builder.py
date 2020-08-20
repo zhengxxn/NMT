@@ -8,6 +8,7 @@ from util.model_build.make_model.make_transformer_with_stacked_multi_head_adapte
 from util.model_build.make_model.make_transformer_with_diff_size_stacked_adapter import make_transformer_with_diff_size_stacked_adapter
 from util.model_build.make_model.make_transformer_with_full_model import make_transformer_with_full_adapter
 from util.model_build.make_model.make_transformer_with_synthesizer_adapter import make_transformer_with_synthesizer_adapter
+from util.model_build.make_model.make_transformer_classifier_adapter import make_transformer_with_classifier_adapter
 
 from util.lr_scheduler.get_lr_scheduler import get_lr_scheduler
 
@@ -39,6 +40,8 @@ class ModelBuilder:
             model = make_transformer_with_full_adapter(model_config=model_config, vocab=vocab)
         elif model_name == 'transformer_with_synthesizer_adapter':
             model = make_transformer_with_synthesizer_adapter(model_config=model_config, vocab=vocab)
+        elif model_name == 'transformer_with_classifier_adapter':
+            model = make_transformer_with_classifier_adapter(model_config=model_config, vocab=vocab)
         else:
             model = None
 
