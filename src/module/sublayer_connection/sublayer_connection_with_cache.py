@@ -22,3 +22,7 @@ class SublayerConnectionWithCache(nn.Module):
 
         t, cache = sublayer(self.norm(x))
         return x + self.dropout(t), cache
+
+    def wo_residual_forward(self, x, sublayer):
+        t, cache = sublayer(self.norm(x))
+        return self.dropout(t), cache

@@ -3,6 +3,7 @@ import math
 import torch.nn as nn
 import copy
 from module.synthesizer.random_synthesizer import RandomSynthesizer
+from module.synthesizer.dense_synthesizer import DenseSynthesizer
 
 
 def clones(module, n):
@@ -17,10 +18,12 @@ def attention_plus_synthesizer(query: torch.Tensor,
                                synthesizer_scores: torch.Tensor,
                                alpha: torch.Tensor,
                                mask: torch.Tensor = None,
-                               dropout_layer: nn.Dropout = None, ):
+                               dropout_layer: nn.Dropout = None,
+                               is_dense: bool = False):
     """
     Compute 'Scaled Dot Product Attention' with random synthesizer
 
+    :param is_dense: if random synthesizer, need rescale length, if dense synthesizer, do not need rescale length
     :param query: [batch size, head num, seq len, head dim]
     :param key: [batch size, head num, seq len, head dim]
     :param alpha: range: [0, 1]
@@ -29,18 +32,27 @@ def attention_plus_synthesizer(query: torch.Tensor,
     :param dropout_layer:
     :return: the attention weight
     """
+
     d_k = query.size(-1)
-    head_num = synthesizer_scores.size(0)
+    batch_size = query.size(0)
+    head_num = query.size(1)
     max_sent_len = synthesizer_scores.size(-1)
     seq_len = query.size(-2)
 
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)  # [batch size, head num, seq len, seq len]
 
-    if seq_len < max_sent_len:  # cut off
-        _synthesizer_scores = synthesizer_scores[:, :seq_len, :seq_len]  # [head num, seq len, seq len]
-    else:  # expand
-        _synthesizer_scores = torch.zeros(head_num, seq_len, seq_len, device=scores.device)
-        _synthesizer_scores[:, :max_sent_len, :max_sent_len] = synthesizer_scores
+    if not is_dense:
+        if seq_len < max_sent_len:  # cut off
+            _synthesizer_scores = synthesizer_scores[:, :seq_len, :seq_len]  # [head num, seq len, seq len]
+        else:  # expand
+            _synthesizer_scores = torch.zeros(head_num, seq_len, seq_len, device=scores.device)
+            _synthesizer_scores[:, :max_sent_len, :max_sent_len] = synthesizer_scores
+    else:
+        if seq_len < max_sent_len:  # cut off
+            _synthesizer_scores = synthesizer_scores[:, :, :, :seq_len]  # [batch size, head num, seq len, seq len]
+        else:  # expand
+            _synthesizer_scores = torch.zeros(batch_size, head_num, seq_len, seq_len, device=scores.device)
+            _synthesizer_scores[:, :, :, :max_sent_len] = synthesizer_scores
 
     merge_scores = scores * alpha + (1 - alpha) * _synthesizer_scores
 
@@ -81,18 +93,30 @@ class MultiHeadedAttentionWithAdapter(nn.Module):
         self.dimension_each_head = feature_size // head_num
         self.head_num = head_num
         self.linear_layers = clones(nn.Linear(feature_size, feature_size), 4)
-
         self.dropout_layer = nn.Dropout(p=dropout)
 
         self.synthesizer_adapter = nn.ModuleDict()
+        self.synthesizer_type = {}
         self.alpha_for_synthesizer_adapter = nn.ParameterDict()
+
         for domain in domain_adapter_dict.keys():
-            self.synthesizer_adapter[domain] = RandomSynthesizer(head_num=head_num,
-                                                                 max_sent_len=domain_adapter_dict[domain][
-                                                                     'max_sent_len'],
-                                                                 factorized=domain_adapter_dict[domain]['factorized'],
-                                                                 rank=domain_adapter_dict[domain]['rank'])
-            self.alpha_for_synthesizer_adapter[domain] = nn.Parameter(torch.randn(1), requires_grad=True)
+            if domain_adapter_dict[domain]['synthesizer_type'] == 'random':
+                self.synthesizer_adapter[domain] = RandomSynthesizer(head_num=head_num,
+                                                                     max_sent_len=domain_adapter_dict[domain][
+                                                                         'max_sent_len'],
+                                                                     factorized=domain_adapter_dict[domain]['factorized'],
+                                                                     rank=domain_adapter_dict[domain]['rank'])
+                self.synthesizer_type[domain] = 'random'
+            else:
+                self.synthesizer_adapter[domain] = DenseSynthesizer(head_num=head_num,
+                                                                    feature_size=feature_size,
+                                                                    max_sent_len=domain_adapter_dict[domain]['max_sent_len'],
+                                                                    factorized=domain_adapter_dict[domain]['factorized'],
+                                                                    len_a=domain_adapter_dict[domain]['len_a'],
+                                                                    len_b=domain_adapter_dict[domain]['len_b'])
+                self.synthesizer_type[domain] = 'dense'
+
+            self.alpha_for_synthesizer_adapter[domain] = nn.Parameter(torch.zeros(1), requires_grad=True)
             # self.weight_for_synthesizer_adapter[domain][0] = 0.5
 
         self.attention_weight = None
@@ -111,15 +135,20 @@ class MultiHeadedAttentionWithAdapter(nn.Module):
         value_up = self.linear_layers[2](value).view(batch_size, -1, self.head_num, self.dimension_each_head) \
             .transpose(1, 2)
 
-        synthesizer_scores = self.synthesizer_adapter[target_domain]()
-        alpha = torch.sigmoid(self.alpha_for_synthesizer_adapter[target_domain]())
+        if self.synthesizer_type[target_domain] == 'random':
+            synthesizer_scores = self.synthesizer_adapter[target_domain]()
+        else:
+            synthesizer_scores = self.synthesizer_adapter[target_domain](query)
+
+        alpha = torch.sigmoid(self.alpha_for_synthesizer_adapter[target_domain])
 
         attention_weight = attention_plus_synthesizer(query=query_up,
                                                       key=key_up,
                                                       synthesizer_scores=synthesizer_scores,
                                                       alpha=alpha,
                                                       mask=mask,
-                                                      dropout_layer=self.dropout_layer, )
+                                                      dropout_layer=self.dropout_layer,
+                                                      is_dense=False if self.synthesizer_type[target_domain] == 'random' else True)
 
         v = torch.matmul(attention_weight, value_up)
 
@@ -133,7 +162,11 @@ class MultiHeadedAttentionWithAdapter(nn.Module):
 if __name__ == "__main__":
     domain_dict = {
         'laws':
-            {'max_sent_len': 10,
+            {'max_sent_len': 12,
+             'synthesizer_type': 'dense',
+             'len_a': 4,
+             'len_b': 3,
+             'factorized': True,
              'rank': 8,
              },
     }

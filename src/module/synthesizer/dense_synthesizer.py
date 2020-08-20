@@ -45,6 +45,8 @@ class DenseSynthesizer(nn.Module):
             Linear_1 (hid dim -> hid dim)
             Linear_2_a (hid dim -> len_a)
             Linear_2_b (hid dim -> len_b)
+
+        to reduce the parameter count, remove the linear_1
 =        """
 
         super(DenseSynthesizer, self).__init__()
@@ -52,11 +54,15 @@ class DenseSynthesizer(nn.Module):
 
         if self.factorized:
             assert len_a == max_sent_len // len_b
-            self.linear_1 = nn.Linear(feature_size, feature_size)
-            self.linear_2_a = nn.Linear(feature_size, len_a)
-            self.linear_2_b = nn.Linear(feature_size, len_b)
+            # self.linear_1 = nn.Linear(feature_size, feature_size)
+            self.linear_2_a = nn.Linear(feature_size, len_a * head_num)
+            self.linear_2_b = nn.Linear(feature_size, len_b * head_num)
+            self.head_num = head_num
+            self.len_a = len_a
+            self.len_b = len_b
+            self.max_sent_len = max_sent_len
         else:
-            self.linear_1 = nn.Linear(feature_size, feature_size)
+            # self.linear_1 = nn.Linear(feature_size, feature_size)
             self.linear_2 = nn.Linear(feature_size, max_sent_len)
 
     def forward(self, x):
@@ -66,11 +72,30 @@ class DenseSynthesizer(nn.Module):
         :return:
         """
         if self.factorized:
-            mid_output = self.linear_1(x)
-            dense_synthesizer_weight_a = self.linear_a_2(torch.relu(self.linear_a_1(x)))  # [batch size, max_sent_len, len_a]
-            dense_synthesizer_weight_b = self.linear_b_2(torch.relu(self.linear_b_1(x)))  # [batch size, max_sent_len, len_b]
-            dense_synthesizer_weight_a = dense_synthesizer_weight_a.unsqueeze(-1).expand()
-
+            # dense_synthesizer_weight_a = self.linear_a_2(torch.relu(self.linear_a_1(x)))  # [batch size, max_sent_len, len_a]
+            # dense_synthesizer_weight_b = self.linear_b_2(torch.relu(self.linear_b_1(x)))  # [batch size, max_sent_len, len_b]
+            dense_synthesizer_weight_a = self.linear_2_a(x)  # [batch size, seq_len, len_a * head_num]
+            dense_synthesizer_weight_b = self.linear_2_b(x)  # [batch size, seq_len, len_b * head num]
+            batch_size, seq_len = dense_synthesizer_weight_a.size(0), dense_synthesizer_weight_a.size(1)
+            dense_synthesizer_weight_a = dense_synthesizer_weight_a.view(batch_size, seq_len, self.head_num,
+                                                                         self.len_a, 1)
+            dense_synthesizer_weight_b = dense_synthesizer_weight_b.view(batch_size, seq_len, self.head_num,
+                                                                         self.len_b, 1)
+            dense_synthesizer_weight_a = dense_synthesizer_weight_a.expand(-1, -1, -1, -1,
+                                                                           self.len_b).contiguous().view(batch_size,
+                                                                                                         seq_len,
+                                                                                                         self.head_num,
+                                                                                                         -1)
+            dense_synthesizer_weight_b = dense_synthesizer_weight_b.expand(-1, -1, -1, -1,
+                                                                           self.len_a).contiguous().view(batch_size,
+                                                                                                         seq_len,
+                                                                                                         self.head_num,
+                                                                                                         -1)
+            dense_synthesizer_weight_a = dense_synthesizer_weight_a.transpose(-2, -3)  # [b, h, s, l]
+            dense_synthesizer_weight_b = dense_synthesizer_weight_b.transpose(-2, -3)  # [b, h, s, l]
+            # dense_synthesizer_weight = torch.matmul(dense_synthesizer_weight_a,
+            #                                         dense_synthesizer_weight_b.transpose(-1, -2))
+            dense_synthesizer_weight = dense_synthesizer_weight_a * dense_synthesizer_weight_b
         else:
 
             dense_synthesizer_weight = self.linear_2(torch.relu(self.linear_1(x)))
@@ -79,5 +104,5 @@ class DenseSynthesizer(nn.Module):
 
 
 if __name__ == "__main__":
-    m = DenseSynthesizer(head_num=4, max_sent_len=20, factorized=True, rank=2)
-    print(m().shape)
+    m = DenseSynthesizer(head_num=4, feature_size=64, max_sent_len=20, factorized=True, len_a=4, len_b=5)
+    print(m(torch.randn(5, 12, 64)).shape)

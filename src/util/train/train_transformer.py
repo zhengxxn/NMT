@@ -46,8 +46,14 @@ def main():
                                       device=device,
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
+    print('trained parameters: ')
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name, param.shape)
+
     # make criterion
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
+
     # make optimizer
     optimizer = model_builder.build_optimizer(parameters=model.parameters(),
                                               optimizer_config=config['Optimizer'],

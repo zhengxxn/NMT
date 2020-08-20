@@ -8,13 +8,12 @@ Annotation:
 
 Dataset:
   train_dataset_path:
-    - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-train.tsv" # bpe size 32000
+    - /Users/zx/Documents/mt_data_analysis/laws-ende-share/train.tsv # bpe size 32000
 
   dev_dataset_path:
-    - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.tsv"
+    - /Users/zx/Documents/mt_data_analysis/laws-ende-share/dev.tsv
 
   test_dataset_path:
-    # - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-train-select.tsv"
     - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.tsv"
     - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-test.tsv"
 
@@ -24,10 +23,10 @@ Dataset:
 Vocab:
   use_bpe: True
   src:
-    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
+    file: /Users/zx/Documents/mt_data_analysis/laws-ende-share/vocab.en
     max_size: 37000
   trg:
-    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
+    file: /Users/zx/Documents/mt_data_analysis/laws-ende-share/vocab.de
     max_size: 37000
 
 Model:

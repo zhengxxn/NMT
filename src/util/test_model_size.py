@@ -3,6 +3,7 @@ from util.model_build.make_model.make_transformer_with_adapter import make_trans
 from util.model_build.make_model.make_transformer_with_parallel_adapter import make_transformer_with_parallel_adapter
 from util.model_build.make_model.make_transformer_with_stacked_adapter import make_transformer_with_stacked_adapter
 
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
 
