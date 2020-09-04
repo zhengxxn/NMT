@@ -145,6 +145,7 @@ class BeamSearch:
         last_length = torch.where(start_predicted_classes != self._end_index,
                                   torch.ones_like(start_predicted_classes),
                                   torch.zeros_like(start_predicted_classes)).to(last_log_probabilities.device)
+        last_length = last_length.float()
 
         # shape: [(batch_size, beam_size)]
         predictions.append(start_predicted_classes)
@@ -203,6 +204,7 @@ class BeamSearch:
             current_top_length = torch.where(predicted_classes != self._end_index,
                                              torch.ones_like(predicted_classes),
                                              torch.zeros_like(predicted_classes)).to(last_log_probabilities.device)
+            current_top_length = current_top_length.float()
 
             # Here we expand the last log probabilities to (batch_size * beam_size, per_node_beam_size)
             # so that we can add them to the current log probs for this timestep.
@@ -223,9 +225,11 @@ class BeamSearch:
             # shape: (batch_size * beam_size, per_node_beam_size)
             summed_top_log_probabilities = top_log_probabilities + expanded_last_log_probabilities
             summed_top_length = current_top_length + expanded_last_length
+            summed_top_length = summed_top_length.float()
 
             if self.alpha > 0 and self.length_penalty:
                 length_penalty = ((5.0 + summed_top_length) ** self.alpha) / ((5.0 + 1.0) ** self.alpha)
+                # print(length_penalty)
                 normalized_summed_top_log_probabilities = summed_top_log_probabilities / length_penalty
             else:
                 normalized_summed_top_log_probabilities = summed_top_log_probabilities

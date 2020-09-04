@@ -13,10 +13,10 @@ class TransformerWithMixAdapter(nn.Module):
                  generator,
                  emb_classifier,
                  vocab,
+                 classify_domain_mask,
                  share_decoder_embedding=False,
                  share_enc_dec_embedding=False,
                  domain_list: list = None,
-                 domain_mask=None,
                  max_domain_num: int = 0,
                  ):
         super().__init__()
@@ -27,6 +27,7 @@ class TransformerWithMixAdapter(nn.Module):
         self.decoder = decoder
         self.generator = generator
         self.vocab = vocab
+
         if share_enc_dec_embedding:
             assert vocab['src'] == vocab['trg']
             self.src_embedding_layer.embedding_layer.weight = \
@@ -34,38 +35,84 @@ class TransformerWithMixAdapter(nn.Module):
         if share_decoder_embedding:
             self.generator.proj.weight = self.trg_embedding_layer.embedding_layer.weight
 
-        self.domain_mask = torch.ByteTensor(domain_mask)
+        self.classify_domain_mask = torch.ByteTensor(classify_domain_mask)
         self.domain_list = domain_list
         self.max_domain_num = max_domain_num
         self.emb_classifier = emb_classifier
 
+        self.mix_output = False
+        self.used_domain_list = None
+        self.mix_weight = None
+        self.domain_mask = None
+
         self.target_domain = None
         # self.ref_domain_list = None
 
-    def forward(self, src, src_mask, trg_input, trg, trg_mask, target_domain):
+    def forward(self, src, src_mask, trg_input, trg, trg_mask, target_domain,
+                mix_output: bool = False,
+                used_domain_list: list = None,
+                mix_weight: torch.Tensor = None,
+                domain_mask: torch.Tensor = None):
 
-        decoder_state = self.prepare_for_decode(src, src_mask, target_domain, require_adapter_output=True)
+        decoder_state = self.prepare_for_decode(src, src_mask, target_domain,
+                                                mix_output=mix_output,
+                                                used_domain_list=used_domain_list,
+                                                mix_weight=mix_weight,
+                                                domain_mask=domain_mask,
+                                                require_adapter_output=True)
 
-        decoder_logits, adapter_output, _, _ = self.decode(trg_input, trg_mask, decoder_state, target_domain)
-        log_probs = self.generator(decoder_logits)
+        if mix_output:
+            decoder_logits, adapter_output, _, _, decode_mix_weight = self.decode(trg_input, trg_mask, decoder_state,
+                                                                                  target_domain=self.target_domain,
+                                                                                  mix_output=self.mix_output,
+                                                                                  used_domain_list=self.used_domain_list,
+                                                                                  mix_weight=self.mix_weight,
+                                                                                  domain_mask=self.domain_mask,
+                                                                                  )
+        else:
+            decoder_logits, adapter_output, _, _ = self.decode(trg_input, trg_mask, decoder_state,
+                                                               target_domain=self.target_domain,
+                                                               mix_output=self.mix_output,
+                                                               used_domain_list=self.used_domain_list,
+                                                               mix_weight=self.mix_weight,
+                                                               domain_mask=self.domain_mask,
+                                                               )
 
-        return {'log_prob': log_probs,
+        logit = self.generator(decoder_logits, return_logit=True)
+        log_probs = torch.log_softmax(logit, -1)
+
+        return {'logit': logit,
+                'log_prob': log_probs,
                 'enc_adapter_output': decoder_state['encoder_adapter_output'],
-                'dec_adapter_output': adapter_output}
+                'dec_adapter_output': adapter_output,
+                'enc_mix_weight': decoder_state['enc_calculate_mix_weight'] if mix_output else None,
+                'dec_mix_weght': decode_mix_weight if mix_output else None}
 
     def classify_forward(self, src, src_mask):
 
         input_embedding = self.src_embedding_layer(src)
-        emb_classify_logits = self.emb_classifier(input_embedding, src_mask, self.domain_mask)  # [batch, class num]
+        emb_classify_logits = self.emb_classifier(input_embedding, src_mask,
+                                                  self.classify_domain_mask)  # [batch, class num]
 
         return {'emb_classify_logits': emb_classify_logits}
 
-    def prepare_for_decode(self, src, src_mask, target_domain, require_adapter_output=False):
+    def prepare_for_decode(self, src, src_mask, target_domain,
+                           mix_output: bool = False,
+                           used_domain_list: list = None,
+                           mix_weight: torch.Tensor = None,
+                           domain_mask: torch.Tensor = None,
+                           require_adapter_output=False):
 
         assert src_mask is not None
+
         self.target_domain = target_domain
+        self.mix_output = mix_output
+        self.used_domain_list = used_domain_list
+        self.mix_weight = mix_weight
+        self.domain_mask = domain_mask
+
         # print('model ', target_domain)
-        encoder_state = self.encode(src, src_mask, target_domain)
+        encoder_state = self.encode(src, src_mask, target_domain, mix_output, used_domain_list, mix_weight, domain_mask)
         decoder_state = {
             'memory': encoder_state['memory'],
             'src_mask': src_mask,
@@ -79,6 +126,9 @@ class TransformerWithMixAdapter(nn.Module):
 
         if require_adapter_output:
             decoder_state['encoder_adapter_output'] = encoder_state['adapter_output']
+
+        if mix_output is True:
+            decoder_state['enc_calculate_mix_weight'] = encoder_state['encoder_calculate_mix_weights']
 
         return decoder_state
 
@@ -120,12 +170,27 @@ class TransformerWithMixAdapter(nn.Module):
         else:
             assert decode_state['enc_attn_cache'] is None
 
-        logits, adapter_output, new_enc_attn_cache, new_self_attn_cache = self.decode(trg_input,
-                                                                                      trg_mask,
-                                                                                      decode_state,
-                                                                                      target_domain=decode_state['target_domain'] \
-                                                                                      if 'target_domain' in decode_state.keys() else self.target_domain,
-                                                                                      test=True)
+        if self.mix_output:
+            logits, adapter_output, new_enc_attn_cache, new_self_attn_cache, _ = self.decode(trg_input,
+                                                                                             trg_mask,
+                                                                                             decode_state,
+                                                                                             target_domain=decode_state[
+                                                                                                 'target_domain'] \
+                                                                                                 if 'target_domain' in decode_state.keys() else self.target_domain,
+                                                                                             mix_output=self.mix_output,
+                                                                                             used_domain_list=self.used_domain_list,
+                                                                                             mix_weight=self.mix_weight,
+                                                                                             domain_mask=self.domain_mask,
+                                                                                             test=True)
+
+        else:
+            logits, adapter_output, new_enc_attn_cache, new_self_attn_cache = self.decode(trg_input,
+                                                                                          trg_mask,
+                                                                                          decode_state,
+                                                                                          target_domain=decode_state[
+                                                                                              'target_domain'] \
+                                                                                              if 'target_domain' in decode_state.keys() else self.target_domain,
+                                                                                          test=True)
 
         logits = logits[:, -1, :]
         log_prob = self.generator(logits)
@@ -138,15 +203,35 @@ class TransformerWithMixAdapter(nn.Module):
 
         decode_state.pop('enc_attn_cache', None)
         decode_state.pop('self_attn_cache', None)
+        decode_state.pop('enc_calculate_mix_weight', None)
 
         return log_prob, decode_state
 
-    def encode(self, src, src_mask, target_domain):
+    def encode(self, src,
+               src_mask,
+               target_domain,
+               mix_output: bool = False,
+               used_domain_list: list = None,
+               mix_weight: torch.Tensor = None,
+               domain_mask: torch.Tensor = None):
+
         input_embedding = self.src_embedding_layer(src)
-        encoder_state = self.encoder(input_embedding, src_mask, target_domain=target_domain)
+        encoder_state = self.encoder(input_embedding, src_mask, target_domain=target_domain,
+                                     mix_output=mix_output,
+                                     used_domain_list=used_domain_list,
+                                     mix_weight=mix_weight,
+                                     domain_mask=domain_mask)
         return encoder_state
 
-    def decode(self, trg_input, trg_mask, decoder_state, target_domain, test=False):
+    def decode(self, trg_input, trg_mask, decoder_state,
+               target_domain,
+               mix_output: bool = False,
+               used_domain_list: list = None,
+               mix_weight: torch.Tensor = None,
+               domain_mask: torch.Tensor = None,
+               test=False,
+               ):
+
         trg_input_embedding = self.trg_embedding_layer(trg_input)
 
         if test:
@@ -159,4 +244,8 @@ class TransformerWithMixAdapter(nn.Module):
                             decoder_state['enc_attn_cache'],
                             decoder_state['self_attn_cache'],
                             target_domain=target_domain,
+                            mix_output=mix_output,
+                            used_domain_list=used_domain_list,
+                            mix_weight=mix_weight,
+                            domain_mask=domain_mask
                             )

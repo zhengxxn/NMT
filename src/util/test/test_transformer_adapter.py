@@ -19,7 +19,8 @@ def main():
     # set the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    tester = TransformerAdapterTester(config, device, model_name='transformer_with_adapter')
+    model_name = config['Test']['model_name']
+    tester = TransformerAdapterTester(config, device, model_name=model_name)
     tester.decoding()
 
 
