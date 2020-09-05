@@ -5,6 +5,7 @@ import copy
 from module.adapter.stacked_adapter import StackedAdapter
 from module.adapter.parallel_adapter import ParallelAdapter
 from module.adapter.mixture_of_adapter import MixtureOfAdapter
+from module.sublayer_connection.sublayer_connection import SublayerConnection
 
 
 def clones(sub_module, num_layers):
@@ -27,6 +28,7 @@ class TransformerEncoderLayerWithAdapter(nn.Module):
                  domain_adapter_dict: dict = None,
                  domain_list: list = None,
                  max_domain_num: int = 0,
+                 domain_inner_gate_list: list = None,
                  ):
         """
 
@@ -40,6 +42,7 @@ class TransformerEncoderLayerWithAdapter(nn.Module):
 
         self.self_attention_layer = self_attention_layer  # sub layer 1
         self.feed_forward_layer = feed_forward_layer  # sub layer 2
+        self.sub_layer_connections = clones(SublayerConnection(feature_size, dropout_rate), 2)
         self.feature_size = feature_size
 
         # make adapter
@@ -55,7 +58,7 @@ class TransformerEncoderLayerWithAdapter(nn.Module):
                                              feature_size=feature_size,
                                              dropout_rate=dropout_rate,
                                              domain_list=domain_list,
-                                             has_inner_gate=False,
+                                             domain_inner_gate_list=domain_inner_gate_list,
                                              max_domain_num=max_domain_num)
 
         else:
@@ -88,14 +91,22 @@ class TransformerEncoderLayerWithAdapter(nn.Module):
         x = self.sub_layer_connections[1](x, self.feed_forward_layer)
 
         if target_domain is not None:
+
             if self.adapter_fusion == 'mix' and self.adapter_type == 'stack':
-                x = self.adapters(x,
-                                  target_domain=target_domain,
-                                  mix_output=mix_output,
-                                  used_domain_list=used_domain_list,
-                                  mix_weight=mix_weight,
-                                  domain_mask=domain_mask,
-                                  )
+                result = self.adapters(x,
+                                       target_domain=target_domain,
+                                       mix_output=mix_output,
+                                       used_domain_list=used_domain_list,
+                                       mix_weight=mix_weight,
+                                       domain_mask=domain_mask,
+                                       )
+                if mix_output is True:
+                    x, calculate_mix_weight = result[0], result[1]
+                    return x, calculate_mix_weight
+                else:
+                    x = result
+                    return x
+
             else:
                 # todo: add others
                 x = self.adapters(x, target_domain)
@@ -123,15 +134,29 @@ class TransformerEncoderWithAdapter(nn.Module):
                 domain_mask: torch.Tensor = None):
 
         layers_adapter_output = []
-        for layer in self.layers:
-            if self.adapter_fusion == 'mix':
-                x = layer(x, src_mask, target_domain, mix_output, used_domain_list, mix_weight, domain_mask)
+        calculate_mix_weights = []
+
+        for i, layer in enumerate(self.layers):
+
+            # to Test if each domain in the same layer do the similar things,
+            # by use different domain adapter in different layers
+            if isinstance(target_domain, list):
+                cur_layer_target_domain = target_domain[i]
+            else:
+                cur_layer_target_domain = target_domain
+
+            if mix_output is True:
+                x, calculate_mix_weight = layer(x, src_mask, cur_layer_target_domain, mix_output, used_domain_list, mix_weight,
+                                                domain_mask)
+                calculate_mix_weights.append(calculate_mix_weight)
+
             else:
                 # todo
-                x = layer(x, src_mask, target_domain)
+                x = layer(x, src_mask, cur_layer_target_domain)
 
             layers_adapter_output.append(x)
             # layers_ref_adapter_list.append(ref_adapter_list)
 
         return {'memory': self.layer_norm(x),
-                'adapter_output': layers_adapter_output}
+                'adapter_output': layers_adapter_output,
+                'encoder_calculate_mix_weights': calculate_mix_weights}

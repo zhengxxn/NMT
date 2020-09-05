@@ -33,6 +33,7 @@ class TransformerDecoderLayerWithAdapter(nn.Module):
                  domain_adapter_dict: dict = None,
                  domain_list: list = None,
                  max_domain_num: int = 0,
+                 domain_inner_gate_list: list = None
                  ):
 
         super(TransformerDecoderLayerWithAdapter, self).__init__()
@@ -57,7 +58,7 @@ class TransformerDecoderLayerWithAdapter(nn.Module):
                                              feature_size=feature_size,
                                              dropout_rate=dropout_rate,
                                              domain_list=domain_list,
-                                             has_inner_gate=False,
+                                             domain_inner_gate_list=domain_inner_gate_list,
                                              max_domain_num=max_domain_num)
 
         else:
@@ -112,13 +113,19 @@ class TransformerDecoderLayerWithAdapter(nn.Module):
 
         if target_domain is not None:
             if self.adapter_fusion == 'mix' and self.adapter_type == 'stack':
-                x = self.adapters(x,
-                                  target_domain=target_domain,
-                                  mix_output=mix_output,
-                                  used_domain_list=used_domain_list,
-                                  mix_weight=mix_weight,
-                                  domain_mask=domain_mask,
-                                  )
+                result = self.adapters(x,
+                                       target_domain=target_domain,
+                                       mix_output=mix_output,
+                                       used_domain_list=used_domain_list,
+                                       mix_weight=mix_weight,
+                                       domain_mask=domain_mask,
+                                       )
+                if mix_output is True:
+                    x, calculate_mix_weight = result[0], result[1]
+                    return x, new_enc_attn_cache, new_self_attn_cache, calculate_mix_weight
+                else:
+                    x = result
+                    return x, new_enc_attn_cache, new_self_attn_cache
             else:
                 # todo: add others
                 x = self.adapters(x, target_domain)
@@ -166,23 +173,49 @@ class TransformerDecoderWithAdapter(nn.Module):
 
         # layers_ref_adapter_list = []
         layers_adapter_output = []
+        calculate_mix_weights = []
 
         for i, layer in enumerate(self.layers):
-            x, new_enc_attn_cache, new_self_attn_cache = layer(x,
-                                                               memory,
-                                                               src_mask,
-                                                               trg_mask,
-                                                               enc_attn_cache_list[i],
-                                                               self_attn_cache_list[i],
-                                                               target_domain,
-                                                               mix_output,
-                                                               used_domain_list,
-                                                               mix_weight,
-                                                               domain_mask
-                                                               )
+
+            # to Test if each domain in the same layer do the similar things,
+            # by use different domain adapter in different layers
+
+            if isinstance(target_domain, list):
+                cur_layer_target_domain = target_domain[i]
+            else:
+                cur_layer_target_domain = target_domain
+
+            if mix_output is True:
+                x, new_enc_attn_cache, new_self_attn_cache, calculate_mix_weight = layer(x,
+                                                                                         memory,
+                                                                                         src_mask,
+                                                                                         trg_mask,
+                                                                                         enc_attn_cache_list[i],
+                                                                                         self_attn_cache_list[i],
+                                                                                         cur_layer_target_domain,
+                                                                                         mix_output,
+                                                                                         used_domain_list,
+                                                                                         mix_weight,
+                                                                                         domain_mask
+                                                                                         )
+                calculate_mix_weights.append(calculate_mix_weight)
+
+            else:
+                x, new_enc_attn_cache, new_self_attn_cache = layer(x,
+                                                                   memory,
+                                                                   src_mask,
+                                                                   trg_mask,
+                                                                   enc_attn_cache_list[i],
+                                                                   self_attn_cache_list[i],
+                                                                   cur_layer_target_domain,
+                                                                   )
             layers_adapter_output.append(x)
+
             # layers_ref_adapter_list.append(ref_adapter_list)
             new_self_attn_cache_list = new_self_attn_cache_list + [new_self_attn_cache]
             new_enc_attn_cache_list = new_enc_attn_cache_list + [new_enc_attn_cache]
 
-        return self.layer_norm(x), layers_adapter_output, new_enc_attn_cache_list, new_self_attn_cache_list
+        if mix_output is True:
+            return self.layer_norm(x), layers_adapter_output, new_enc_attn_cache_list, new_self_attn_cache_list, calculate_mix_weights
+        else:
+            return self.layer_norm(x), layers_adapter_output, new_enc_attn_cache_list, new_self_attn_cache_list

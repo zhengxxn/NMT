@@ -2,7 +2,7 @@ import yaml
 import torch
 import numpy as np
 import sys
-from util.tester.transformer_adapter_tester import TransformerAdapterTester
+from util.tester.mix_adapter_tester import MixAdapterTester
 
 
 def main():
@@ -19,8 +19,7 @@ def main():
     # set the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model_name = config['Test']['model_name']
-    tester = TransformerAdapterTester(config, device, model_name=model_name)
+    tester = MixAdapterTester(config, device, model_name='transformer_with_mix_adapter')
     tester.decoding()
 
 
