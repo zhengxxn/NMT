@@ -35,6 +35,7 @@ class TransformerTester:
         from collections import OrderedDict
         new_state_dict = OrderedDict()
         save_in_multi_gpu = config['Test']['save_in_multi_gpu']
+
         if save_in_multi_gpu:
             for k, v in save_model_state_dict.items():
                 name = k[7:]  # remove `module.`
@@ -42,7 +43,11 @@ class TransformerTester:
 
             model.load_state_dict(new_state_dict)
         else:
-            model.load_state_dict(save_model_state_dict)
+
+            model_dict = model.state_dict()
+            model_dict.update(save_model_state_dict)
+            model.load_state_dict(model_dict)
+            # model.load_state_dict(save_model_state_dict)
 
         self.target_language = config['Test']['target_language']
         self.test_ref_file_paths = config['Test']['refs']

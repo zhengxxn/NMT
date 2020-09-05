@@ -176,6 +176,15 @@ class TransformerDecoderWithAdapter(nn.Module):
         calculate_mix_weights = []
 
         for i, layer in enumerate(self.layers):
+
+            # to Test if each domain in the same layer do the similar things,
+            # by use different domain adapter in different layers
+
+            if isinstance(target_domain, list):
+                cur_layer_target_domain = target_domain[i]
+            else:
+                cur_layer_target_domain = target_domain
+
             if mix_output is True:
                 x, new_enc_attn_cache, new_self_attn_cache, calculate_mix_weight = layer(x,
                                                                                          memory,
@@ -183,7 +192,7 @@ class TransformerDecoderWithAdapter(nn.Module):
                                                                                          trg_mask,
                                                                                          enc_attn_cache_list[i],
                                                                                          self_attn_cache_list[i],
-                                                                                         target_domain,
+                                                                                         cur_layer_target_domain,
                                                                                          mix_output,
                                                                                          used_domain_list,
                                                                                          mix_weight,
@@ -198,7 +207,7 @@ class TransformerDecoderWithAdapter(nn.Module):
                                                                    trg_mask,
                                                                    enc_attn_cache_list[i],
                                                                    self_attn_cache_list[i],
-                                                                   target_domain,
+                                                                   cur_layer_target_domain,
                                                                    )
             layers_adapter_output.append(x)
 

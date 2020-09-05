@@ -121,7 +121,7 @@ class TransformerWithMixAdapter(nn.Module):
             'self_attn_cache': None,
         }
 
-        if not isinstance(target_domain, str):
+        if not isinstance(target_domain, str) and not isinstance(target_domain, list):
             decoder_state['target_domain'] = target_domain
 
         if require_adapter_output:

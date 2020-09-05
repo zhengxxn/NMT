@@ -136,16 +136,23 @@ class TransformerEncoderWithAdapter(nn.Module):
         layers_adapter_output = []
         calculate_mix_weights = []
 
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
+
+            # to Test if each domain in the same layer do the similar things,
+            # by use different domain adapter in different layers
+            if isinstance(target_domain, list):
+                cur_layer_target_domain = target_domain[i]
+            else:
+                cur_layer_target_domain = target_domain
 
             if mix_output is True:
-                x, calculate_mix_weight = layer(x, src_mask, target_domain, mix_output, used_domain_list, mix_weight,
+                x, calculate_mix_weight = layer(x, src_mask, cur_layer_target_domain, mix_output, used_domain_list, mix_weight,
                                                 domain_mask)
                 calculate_mix_weights.append(calculate_mix_weight)
 
             else:
                 # todo
-                x = layer(x, src_mask, target_domain)
+                x = layer(x, src_mask, cur_layer_target_domain)
 
             layers_adapter_output.append(x)
             # layers_ref_adapter_list.append(ref_adapter_list)
