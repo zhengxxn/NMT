@@ -7,6 +7,7 @@ class Mix_Adapter_Trainer(Trainer):
     def __init__(self,
                  model,
                  criterion,
+                 validation_criterion,
                  vocab,
                  optimizer,
                  lr_scheduler,
@@ -28,6 +29,7 @@ class Mix_Adapter_Trainer(Trainer):
         super().__init__(
             model,
             criterion,
+            validation_criterion,
             vocab,
             optimizer,
             lr_scheduler,
@@ -101,7 +103,7 @@ class Mix_Adapter_Trainer(Trainer):
                                       mix_weight=None,
                                       domain_mask=None
                                       )['log_prob']
-        loss = self.criterion(
+        loss = self.validation_criterion(
             log_prob.contiguous().view(-1, log_prob.size(-1)),
             new_batch.trg.contiguous().view(-1)
         )

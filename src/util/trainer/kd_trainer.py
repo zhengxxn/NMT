@@ -8,6 +8,7 @@ class Kd_Adapter_Trainer(Trainer):
     def __init__(self,
                  model,
                  criterion,
+                 validation_criterion,
                  vocab,
                  optimizer,
                  lr_scheduler,
@@ -26,6 +27,7 @@ class Kd_Adapter_Trainer(Trainer):
         super().__init__(
             model,
             criterion,
+            validation_criterion,
             vocab,
             optimizer,
             lr_scheduler,
@@ -101,7 +103,7 @@ class Kd_Adapter_Trainer(Trainer):
         log_prob = self.model.forward(new_batch.src, new_batch.src_mask,
                                       new_batch.trg_input, new_batch.trg, new_batch.trg_mask,
                                       self.target_domain)['log_prob']
-        loss = self.criterion(
+        loss = self.validation_criterion(
             log_prob.contiguous().view(-1, log_prob.size(-1)),
             new_batch.trg.contiguous().view(-1)
         )
