@@ -18,6 +18,7 @@ class Trainer:
     def __init__(self,
                  model,
                  criterion,
+                 validation_criterion,
                  vocab,
                  optimizer,
                  lr_scheduler,
@@ -35,6 +36,7 @@ class Trainer:
         self.model = model
         self.vocab = vocab
         self.criterion = criterion
+        self.validation_criterion = validation_criterion
 
         # iterators
         self.train_iterators = train_iterators
@@ -157,7 +159,7 @@ class Trainer:
                                       new_batch.trg_input,
                                       new_batch.trg,
                                       new_batch.trg_mask)['log_prob']
-        loss = self.criterion(
+        loss = self.validation_criterion(
             log_prob.contiguous().view(-1, log_prob.size(-1)),
             new_batch.trg.contiguous().view(-1)
         )

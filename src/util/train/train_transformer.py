@@ -52,7 +52,12 @@ def main():
             print(name, param.shape)
 
     # make criterion
+    # the label_smoothing of validation criterion is always set to 0
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
+    validation_criterion = model_builder.build_criterion(criterion_config={
+        'name': 'kl_divergence',
+        'label_smoothing': 0,
+    }, vocab=vocab)
 
     # make optimizer
     optimizer = model_builder.build_optimizer(parameters=model.parameters(),

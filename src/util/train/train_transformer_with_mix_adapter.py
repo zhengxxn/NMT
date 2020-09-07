@@ -53,6 +53,10 @@ def main():
     model.classify_domain_mask = model.classify_domain_mask.to(device)
 
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
+    validation_criterion = model_builder.build_criterion(criterion_config={
+        'name': 'kl_divergence',
+        'label_smoothing': 0,
+    }, vocab=vocab)
 
     # training_domain = config['Train']['training_domain']
     training_stage = config['Train']['stage']
@@ -77,7 +81,9 @@ def main():
                 param.requires_grad = True
             else:
                 param.requires_grad = False
+
     else:
+        # update specific domain adapter
         for name, param in model.named_parameters():
             if 'adapter' in name and any(domain in name for domain in train_iterator_domain):
                 param.requires_grad = True

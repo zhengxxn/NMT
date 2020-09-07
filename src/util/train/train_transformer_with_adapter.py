@@ -45,6 +45,10 @@ def main():
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
+    validation_criterion = model_builder.build_criterion(criterion_config={
+        'name': 'kl_divergence',
+        'label_smoothing': 0,
+    }, vocab=vocab)
     # make model
 
     for name, param in model.named_parameters():
