@@ -4,6 +4,8 @@ from util.model_builder import ModelBuilder
 from util.decoding.transformer_decoding import beam_search
 from util.convenient_funcs import create_path, tensor2str, de_bpe, get_path_prefix
 from util.batch.transformer_batch import SrcTestBatch
+from module.criterion.test_nll_loss import TestNLLLoss
+from util.batch.transformer_batch import TrainingBatch
 from tqdm import tqdm
 import os
 import sacrebleu
@@ -56,6 +58,9 @@ class TransformerTester:
 
         model = model.to(device)
         self.model = model
+
+        self.test_criterion = TestNLLLoss(size=len(self.vocab['trg']),
+                                          padding_idx=self.vocab['trg'].stoi['<pad>'])
 
     def decoding_step(self, batch):
 
@@ -134,12 +139,15 @@ class TransformerTester:
                                       new_batch.trg_input,
                                       new_batch.trg,
                                       new_batch.trg_mask)['log_prob']
-        loss = self.validation_criterion(
-            log_prob.contiguous().view(-1, log_prob.size(-1)),
-            new_batch.trg.contiguous().view(-1)
-        )
+        loss = self.test_criterion(
+            log_prob.contiguous(),
+            new_batch.trg.contiguous(),
+        )  # [batch]
 
-        return loss.item(), new_batch.ntokens.item()
+        return loss
+
+    def rebatch(self, batch, option=None):
+        return TrainingBatch(batch, pad=self.vocab['trg'].stoi['<pad>'])
 
     def test_loss(self):
 
@@ -148,26 +156,15 @@ class TransformerTester:
         self.model.eval()
         with torch.no_grad():
             for test_iterator in self.test_iterators:
-                sum_loss = 0
-                sum_tokens = 0
-
+                cur_data_loss = []
                 with tqdm(test_iterator) as bar:
                     bar.set_description("loss validation")
                     for batch in bar:
 
-                        loss, n_tokens = self.test_step(batch)
-                        sum_loss += loss
-                        sum_tokens += n_tokens
-
-                        # bar.set_postfix({'loss': '{0:1.5f}'.format(loss / n_tokens),
-                        #                  'best_validation_loss': '{0:1.5f}'.format(self.best_validation_loss)})
-                        # bar.update()
-
-                average_loss = sum_loss / sum_tokens
-                average_loss_list.append(average_loss)
-
-        current_loss = average_loss_list[0]
-        return average_loss_list
+                        loss = self.test_step(batch).tolist()
+                        cur_data_loss = cur_data_loss + loss
+                loss_list.append(cur_data_loss)
+        return loss_list
 
     def visualize_hidden_state(self, save_file):
 

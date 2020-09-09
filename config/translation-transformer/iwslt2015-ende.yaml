@@ -1,10 +1,11 @@
 Annotation:
   device: 
-  language: 
   dataset: 
   what:  
-  hyper_parameter: 
+  model: transformer layer 6 head 4 dim 1024 drop 0.3
+  hyper_parameter: warm step 4000, batch size 4096, 
   log_file: 
+  comment: 
 
 Dataset:
   train_dataset_path:
@@ -31,9 +32,9 @@ Vocab:
 
 Model:
   feature_size: 512
-  feedforward_dim: 512
-  head_num: 8
-  dropout_rate: 0.1
+  feedforward_dim: 1024
+  head_num: 4
+  dropout_rate: 0.3
   num_layers: 6
 
   share_enc_dec_embedding: True
@@ -53,12 +54,19 @@ Criterion:
 
 Optimizer:
   beta2: 0.998
-  lr_rate: 5.0e-5
+  lr_rate: 5.0e-4
   lr_scheduler:
-    name: noam
+    name: inverse_sqrt
     factor: 2.0
-    warmup_steps: 8000
-    model_size: 512
+    warmup_steps: 4000
+    init_lr: 1.0e-7
+    max_lr: 5.0e-4
+    min_lr: 1.0e-7
+    # model_size: 512
+    # name: noam
+    # factor: 2.0
+    # warmup_steps: 4000
+    # model_size: 512
     # name: reduce_lr_on_loss
     # factor: 0.5
     # patience: 2
@@ -71,17 +79,19 @@ Train:
 
   random_seed: 1234
   load_exist_model: False # load model
-  model_load_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
+  model_load_path: /home/zhengx/model_save/wmt14-2-education/finetune-update/bleu_best/model
   load_optimizer: False  # load model and optimizer
-  optimizer_path: 
+  optimizer_path:
+  load_lr_scheduler: False
+  lr_scheduler_path:
 
-  batch_size: 3000
-  update_batch_count: 4
+  batch_size: 4096
+  update_batch_count: 1
   epoch_num: 100
 
 Validation:
   
-  batch_size: 32
+  batch_size: 24
 
   loss_validation:
     start_on_steps: 1000
@@ -114,7 +124,7 @@ Test:
     - "/home/zhengx/output/iwslt-ende/tst2014.output"
 
   save_in_multi_gpu: False
-  model_path: /home/zhengx/model_save/wmt14-2-iwslt/single/loss_best/model
+  model_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
 
   tokenize: intl
   target_language: de
@@ -132,12 +142,12 @@ Test:
     alpha: 0.6
 
 Record:
-  training_record_path: "/home/user_data55/zhengx/project/record-new/wmt14-2-iwslt/single-drop02"
+  training_record_path: "/home/user_data55/zhengx/record/wmt14-2-iwslt/single/layer6-head4-dim1024-drop03"
   
   model_record:
-    path: /home/zhengx/model_save/wmt14-2-iwslt/single-drop02
+    path: /home/zhengx/model_save/wmt14-2-iwslt/single/layer6-head4-dim1024-drop03
     best_model_save:
-      loss_best: True
+      loss_best: False
       bleu_best: True
       save_optimizer: False
       save_lr_scheduler: False
@@ -149,3 +159,5 @@ Record:
       save_optimizer: False
       save_lr_scheduler: False
       save_checkpoint_count: 0
+
+visualize_file: /home/zhengx/visualize/wmt14_adapt/iwslt
