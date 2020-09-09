@@ -1,0 +1,201 @@
+Annotation:
+  device: v1008-1
+  language: en-de
+  dataset: ubuntu
+  what: kd from kde
+  hyper_parameter: 
+  log_file: 
+
+Dataset:
+  train_dataset_path:
+
+    - /home/zhengx/data/wmt14_adapt_dataset_share/ubuntu-clean/ubuntu-train.tsv  # ubuntu
+
+  train_dataset_domain: [ubuntu]
+
+  dev_dataset_path:
+
+    - /home/zhengx/data/wmt14_adapt_dataset_share/ubuntu-clean/ubuntu-dev.tsv  # ubuntu
+
+  dev_dataset_domain: [ubuntu]
+
+  test_dataset_path:
+    - "/home/zhengx/data/wmt2014-ende-share/newstest2014.tsv"
+  
+  combine_train_datasets: False
+  filter_len: 200
+
+Vocab:
+  use_bpe: True
+  share_bpe:
+  src:
+    file: /home/zhengx/data/wmt14_adapt_dataset_share/vocab
+    max_size: 37000
+  trg:
+    file: /home/zhengx/data/wmt14_adapt_dataset_share/vocab
+    max_size: 37000
+
+Model:
+  feature_size: 512
+  feedforward_dim: 2048
+  head_num: 8
+  dropout_rate: 0.1
+  num_layers: 6
+  layer_norm_rescale: True
+
+  share_enc_dec_embedding: True
+  share_decoder_embedding: True
+
+  # generator
+  generator_bias: False
+
+  classifier_type: simple
+  classify_feature_size: 256
+
+  domain_class_num: 15
+  classify_domain_mask: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0]
+  domain_dict: {
+    'news': 0,
+    'iwslt': 1,
+    'books': 2,
+    'bible': 3,
+    'laws': 4,
+    'medical': 5,
+    'koran': 6,
+    'ubuntu': 7,
+    'kde': 8,
+    'GNOME': 9,
+    'php': 10
+  }
+
+  domain_adapter_dict: {
+    'kde': {
+      'memory_count': 512
+    },
+    'ubuntu': {
+      'memory_count': 128
+    }
+
+  }
+
+  domain_inner_gate_list: []
+
+  adapter_setting: {
+    'fusion': mix,
+    'type': stack,
+  }
+
+  domain_list: [news, iwslt, books, bible, laws, medical, koran, ubuntu, kde, GNOME, php]
+
+Criterion:
+  # name: cross_entropy
+  # name: nll
+  # label_smoothing: 0.1
+  # reduction: mean
+
+  name: kl_divergence
+  label_smoothing: 0.1
+  reduction: sum
+
+Optimizer:
+  beta2: 0.998
+  lr_rate: 5.0e-4
+  lr_scheduler:
+    # name: reduce_lr_on_bleu
+    # factor: 0.5
+    # patience: 5
+    # min_lr: 5.0e-5
+    name: noam
+    factor: 2.0
+    warmup_steps: 8000
+    model_size: 512
+  grad_clip: -1.0
+
+Train:
+  stage: kd
+  target_domain: ubuntu
+  kd_ref_domain: {
+    'kde': {
+      'temperature': 2,
+      'factor': 0.2
+    },
+  }
+
+  used_inner_gate: True
+
+  use_multiple_gpu: False
+
+  random_seed: 1234
+  load_exist_model: True # load model
+  model_load_path: /home/data_ti5_c/zhengx/model_save/mix-adapter/kde/512-noam-labelsmooth/bleu_best/model
+  load_optimizer: False  # load model and optimizer
+  optimizer_path: 
+  load_lr_scheduler: False
+  lr_scheduler_path: 
+
+  batch_size: 6000
+  update_batch_count: 2
+  epoch_num: 10000
+
+Validation:
+
+  batch_size: 24
+
+  loss_validation:
+    start_on_steps: 1000
+    frequency: 1000
+  
+  bleu_validation:
+    start_on_steps: 1000
+    frequency: 1000
+
+    tokenize: intl
+    target_language: de
+    use_bpe: True
+    ref: /home/zhengx/data/wmt14_adapt_dataset_share/ubuntu-clean/ubuntu-dev.de
+    detruecase_script: /home/user_data55/zhengx/project/NMT/scripts/recaser/detruecase.perl
+    detokenize_script: /home/user_data55/zhengx/project/NMT/scripts/tokenizer/detokenizer.perl
+
+    beam_search:
+      beam_size: 4
+      max_steps: 150
+      length_penalty: True
+      alpha: 0.6
+
+Test:
+
+  refs: [
+    # /home/zhengx/data/wmt2014-ende-share/newstest2013.de,
+    /home/zhengx/data/wmt2014-ende-share/newstest2014.de
+  ]
+  
+  # model_path: /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/loss_best/model
+  model_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
+  # model_path: /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale_inverse_sqrt/loss_best/model
+  save_in_multi_gpu: False
+  
+  output_path:
+    # - "/home/zhengx/output/wmt2014-ende/newstest2013.output"
+    - "/home/zhengx/output/wmt2014-ende/newstest2014.output"
+
+
+Record:
+  training_record_path: /home/data_ti5_c/zhengx/record/mix-adapter/ubuntu/kd-kde-t2-f02
+  
+  model_record:
+    path: /home/zhengx/model_save/mix-adapter/ubuntu/kd-kde-t2-f02
+    best_model_save:
+      loss_best: False
+      bleu_best: True
+      save_optimizer: False
+      save_lr_scheduler: False
+    
+    # save last checkpoint
+    last_checkpoint_save:
+      start_on_steps: 50000
+      frequency: 2000
+      save_optimizer: False
+      save_lr_scheduler: False
+      save_checkpoint_count: 0
+
+visualize_file: /home/zhengx/visualize/wmt14_adapt/news

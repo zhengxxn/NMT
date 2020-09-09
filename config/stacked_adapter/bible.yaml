@@ -1,0 +1,161 @@
+Annotation:
+  device: 
+  language: 
+  dataset: 
+  what:  
+  hyper_parameter: 
+  log_file: 
+
+Dataset:
+  train_dataset_path:
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-train.tsv" # bpe size 32000
+
+  dev_dataset_path:
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-dev.tsv"
+
+  test_dataset_path:
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-dev.tsv"
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-test.tsv"
+
+  combine_train_datasets: False
+  filter_len: 200
+
+Vocab:
+  use_bpe: True
+  src:
+    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
+    max_size: 37000
+  trg:
+    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
+    max_size: 37000
+
+Model:
+  feature_size: 512
+  feedforward_dim: 2048
+  head_num: 8
+  dropout_rate: 0.1
+  num_layers: 6
+  
+
+  share_enc_dec_embedding: True
+  share_decoder_embedding: True
+
+  domain_adapter_dict: {
+    'bible': {
+      'memory_count': 1024,
+    }
+  }
+
+  # generator
+  generator_bias: False
+
+Criterion:
+  # name: nll
+  # label_smoothing: 0.1
+  # reduction: mean
+
+  name: kl_divergence
+  label_smoothing: 0.1
+  reduction: sum
+
+Optimizer:
+  beta2: 0.998
+  lr_rate: 5.0e-4
+  lr_scheduler:
+    name: reduce_lr_on_bleu
+    factor: 0.5
+    patience: 5
+    min_lr: 5.0e-6
+    # name: noam
+    # factor: 2.0
+    # warmup_steps: 8000
+    # model_size: 512
+  grad_clip: -1.0
+
+
+Train:
+  target_domain: bible
+  use_multiple_gpu: False
+
+  random_seed: 1234
+  load_exist_model: True # load model
+  model_load_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
+  load_optimizer: False  # load model and optimizer
+  optimizer_path: 
+  load_lr_scheduler: False
+  lr_scheduler_path: 
+
+  batch_size: 12000
+  update_batch_count: 1
+  epoch_num: 1000
+
+Validation:
+  
+  batch_size: 64
+
+  loss_validation:
+    start_on_steps: 1000
+    frequency: 1000
+  
+  bleu_validation:
+    start_on_steps: 1000
+    frequency: 1000
+
+    tokenize: intl
+    target_language: de
+    use_bpe: True
+    ref: /home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-dev.de
+    detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
+    detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
+
+    beam_search:
+      beam_size: 4
+      max_steps: 150
+      length_penalty: True
+      alpha: 0.6
+
+Test:
+  refs: [
+    /home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-dev.de,
+    /home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-test.de
+  ]
+  output_path:
+    - "/home/zhengx/output/bible-ende/dev.output"
+    - "/home/zhengx/output/bible-ende/test.output"
+
+  save_in_multi_gpu: False
+  model_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
+
+  tokenize: intl
+  target_language: de
+  use_bpe: True
+  detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
+  detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
+
+  batch_size: 40
+  tag: translation
+
+  beam_search:
+    beam_size: 4
+    max_steps: 150
+    length_penalty: True
+    alpha: 0.6
+
+Record:
+  training_record_path: "/home/user_data55/zhengx/record/wmt14-2-bible-clean/stacked_adapter/adapter-1024"
+  
+  model_record:
+    path: /home/zhengx/model_save/wmt14-2-bible-clean/stacked_adapter/adapter-1024
+    best_model_save:
+      loss_best: False
+      bleu_best: True
+      save_optimizer: False
+      save_lr_scheduler: False
+    
+    # save last checkpoint
+    last_checkpoint_save:
+      start_on_steps: 50000
+      frequency: 2000
+      save_optimizer: False
+      save_lr_scheduler: False
+      save_checkpoint_count: 0

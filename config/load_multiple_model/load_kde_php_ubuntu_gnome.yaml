@@ -1,0 +1,108 @@
+Dataset:
+  train_dataset_path:
+
+    - /home/zhengx/data/wmt14_adapt_dataset_share/GNOME-clean/GNOME-train.tsv  # GNOME
+
+  train_dataset_domain: [GNOME]
+
+  dev_dataset_path:
+
+    - /home/zhengx/data/wmt14_adapt_dataset_share/GNOME-clean/GNOME-dev.tsv  # GNOME
+
+  dev_dataset_domain: [GNOME]
+
+  test_dataset_path:
+    # - "/home/zhengx/data/wmt2014-ende-share/newstest2013.tsv"
+    - /home/zhengx/data/wmt2014-ende-share/newstest2014.tsv
+  
+  combine_train_datasets: False
+  filter_len: 200
+
+Vocab:
+  use_bpe: True
+  share_bpe:
+  src:
+    file: /home/zhengx/data/wmt14_adapt_dataset_share/vocab
+    max_size: 37000
+  trg:
+    file: /home/zhengx/data/wmt14_adapt_dataset_share/vocab
+    max_size: 37000
+
+Model:
+  feature_size: 512
+  feedforward_dim: 2048
+  head_num: 8
+  dropout_rate: 0.1
+  num_layers: 6
+  layer_norm_rescale: True
+
+  share_enc_dec_embedding: True
+  share_decoder_embedding: True
+
+  # generator
+  generator_bias: False
+
+  classifier_type: simple
+  classify_feature_size: 256
+
+  domain_class_num: 15
+  classify_domain_mask: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0]
+  domain_dict: {
+    'news': 0,
+    'iwslt': 1,
+    'books': 2,
+    'bible': 3,
+    'laws': 4,
+    'medical': 5,
+    'koran': 6,
+    'ubuntu': 7,
+    'kde': 8,
+    'GNOME': 9,
+    'php': 10
+  }
+
+  domain_adapter_dict: {
+    # 'GNOME': {
+    #   'memory_count': 512
+    # },
+    'kde': {
+      'memory_count': 512
+    },
+    # 'php': {
+    #   'memory_count': 128
+    # },
+    'ubuntu': {
+      'memory_count': 128
+    },
+    # 'books': {
+    #   'memory_count': 512
+    # },
+    # 'bible': {
+    #   'memory_count': 512
+    # },
+    # 'laws': {
+    #   'memory_count': 1024
+    # },
+    # 'medical': {
+    #   'memory_count': 1024
+    # },
+  }
+
+  adapter_setting: {
+    'fusion': mix,
+    'type': stack,
+  }
+
+  domain_inner_gate_list: []
+  domain_list: [news, iwslt, books, bible, laws, medical, koran, ubuntu, kde, GNOME, php]
+
+load_multiple_model: 
+
+  model_name: transformer_with_mix_adapter
+  load_path:
+    - /home/data_ti5_c/zhengx/model_save/mix-adapter/kde/512-noam-labelsmooth/bleu_best/model
+    # - /home/data_ti5_c/zhengx/model_save/mix-adapter/php/128-noam-labelsmooth/bleu_best/model
+    - /home/data_ti5_c/zhengx/model_save/mix-adapter/ubuntu/128-noam-labelsmooth/bleu_best/model
+    # - /home/data_ti5_c/zhengx/model_save/mix-adapter/GNOME/512-noam-labelsmooth/bleu_best/model
+
+  save_path: /home/data_ti5_c/zhengx/model_save/mix-adapter/mix_trained/kde512-ubuntu128/model

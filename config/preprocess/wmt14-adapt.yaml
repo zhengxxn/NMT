@@ -15,15 +15,15 @@ tokenize:
 #   - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/medical, 
 #      files: [emea-train.de, emea-dev.de, emea-test.de]}
 
-  - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/laws-clean, 
-     files: [laws-train.en, laws-dev.en, laws-test.en]}
-  - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/laws-clean, 
-     files: [laws-train.de, laws-dev.de, laws-test.de]}
+  # - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/laws-clean, 
+    #  files: [laws-train.en, laws-dev.en, laws-test.en]}
+  # - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/laws-clean, 
+    #  files: [laws-train.de, laws-dev.de, laws-test.de]}
 
-  - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/medical-clean, 
-     files: [medical-train.en, medical-dev.en, medical-test.en]}
-  - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/medical-clean, 
-     files: [medical-train.de, medical-dev.de, medical-test.de]}
+  # - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/medical-clean, 
+    #  files: [medical-train.en, medical-dev.en, medical-test.en]}
+  # - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/medical-clean, 
+    #  files: [medical-train.de, medical-dev.de, medical-test.de]}
 
   # - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/iwslt2015, 
   #    files: [IWSLT15.TED.train2015.en-de.en, IWSLT15.TED.tst2012.en-de.en, IWSLT15.TED.tst2013.en-de.en, IWSLT15.TED.tst2014.en-de.en, IWSLT15.TEDX.dev2012.en-de.en]}
@@ -40,10 +40,10 @@ tokenize:
   # - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/koran, 
   #    files: [koran-train.de, koran-dev.de, koran-test.de]}
 
-#   - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/books, 
-#      files: [books-train.en, books-dev.en, books-test.en]}
-#   - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/books, 
-#      files: [books-train.de, books-dev.de, books-test.de]}
+  # - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/books, 
+  #    files: [books-train.en, books-dev.en, books-test.en]}
+  # - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/books, 
+  #    files: [books-train.de, books-dev.de, books-test.de]}
 
 #   - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/kde, 
 #      files: [kde-train.en, kde-dev.en, kde-test.en]}
@@ -60,36 +60,78 @@ tokenize:
 #   - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/subtitles, 
 #      files: [subtitles-train.de, subtitles-dev.de, subtitles-test.de]}
 
-#   - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/bible, 
-#      files: [bible-train.en, bible-dev.en, bible-test.en]}
-#   - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/bible, 
-#      files: [bible-train.de, bible-dev.de, bible-test.de]}
+  # - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/bible-clean, 
+  #    files: [bible-train.en, bible-dev.en, bible-test.en]}
+  # - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/bible-clean, 
+  #    files: [bible-train.de, bible-dev.de, bible-test.de]}
 
 #   - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/ecb, 
 #      files: [ecb-train.en, ecb-dev.en, ecb-test.en]}
 #   - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/ecb, 
 #      files: [ecb-train.de, ecb-dev.de, ecb-test.de]}
 
+  # - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/education, 
+  #    files: [QED-train.en, QED-dev.en, QED-test.en]}
+  # - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/education, 
+  #    files: [QED-train.de, QED-dev.de, QED-test.de]}
+
+  - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/kde-clean, 
+     files: [kde-train.en, kde-dev.en, kde-test.en]}
+  - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/kde-clean, 
+     files: [kde-train.de, kde-dev.de, kde-test.de]}
+
+  - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean, 
+     files: [ubuntu-train.en, ubuntu-dev.en, ubuntu-test.en]}
+  - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean, 
+     files: [ubuntu-train.de, ubuntu-dev.de, ubuntu-test.de]}
+
+  - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/php-clean, 
+     files: [php-train.en, php-dev.en, php-test.en]}
+  - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/php-clean, 
+     files: [php-train.de, php-dev.de, php-test.de]}
+
+  - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean, 
+     files: [GNOME-train.en, GNOME-dev.en, GNOME-test.en]}
+  - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean, 
+     files: [GNOME-train.de, GNOME-dev.de, GNOME-test.de]}
+
+  - {language: en, dir: /home/zhengx/data/wmt14_adapt_dataset/koran-clean, 
+     files: [koran-train.en, koran-dev.en, koran-test.en]}
+  - {language: de, dir: /home/zhengx/data/wmt14_adapt_dataset/koran-clean, 
+     files: [koran-train.de, koran-dev.de, koran-test.de]}
+
 clean:
-  - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-train.tok}
-  - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-train.tok}
+  # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-train.tok}
+  # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-train.tok}
   # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/laws/acquis-train.tok}
   # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/medical/emea-train.tok}
   # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/iwslt2015/IWSLT15.TED.train2015.en-de.tok}
   # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/it/it-train.tok}
   # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/koran/koran-train.tok}
-#   - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/books/books-train.tok}
+  # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/books/books-train.tok}
 #   - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/kde/kde-train.tok}
 #   - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/php/php-train.tok}
 #   - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/subtitles/subtitles-train.tok}
-#   - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/bible/bible-train.tok}
+  # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-train.tok}
 #   - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-train.tok}
+  # - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/education/QED-train.tok}
+  - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/kde-clean/kde-train.tok}
+  - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/koran-clean/koran-train.tok}
+  - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean/ubuntu-train.tok}
+  - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/php-clean/php-train.tok}
+  - {min_len: 1, max_len: 80, ratio: 9, src_language: en, trg_language: de, file_prefix: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean/GNOME-train.tok}
 
 
 apply_bpe:
   - {code_file: /home/zhengx/data/wmt14_adapt_dataset/code32k,
      dir: /home/zhengx/data/wmt14_adapt_dataset,
      files: [
+      #  education/QED-train.tok.clean.en,
+      #  education/QED-train.tok.clean.de,
+      #  education/QED-dev.tok.en,
+      #  education/QED-dev.tok.de,
+      #  education/QED-test.tok.en,
+      #  education/QED-test.tok.de,
       #  books/books-train.tok.clean.en,
       #  books/books-train.tok.clean.de,
       #  books/books-dev.tok.en,
@@ -114,30 +156,60 @@ apply_bpe:
       #  subtitles/subtitles-dev.tok.de,
       #  subtitles/subtitles-test.tok.en,
       #  subtitles/subtitles-test.tok.de,
-      #  bible/bible-train.tok.clean.en,
-      #  bible/bible-train.tok.clean.de,
-      #  bible/bible-dev.tok.en,
-      #  bible/bible-dev.tok.de,
-      #  bible/bible-test.tok.en,
-      #  bible/bible-test.tok.de,
+      #  bible-clean/bible-train.tok.clean.en,
+      #  bible-clean/bible-train.tok.clean.de,
+      #  bible-clean/bible-dev.tok.en,
+      #  bible-clean/bible-dev.tok.de,
+      #  bible-clean/bible-test.tok.en,
+      #  bible-clean/bible-test.tok.de,
+       kde-clean/kde-train.tok.clean.en,
+       kde-clean/kde-train.tok.clean.de,
+       kde-clean/kde-dev.tok.en,
+       kde-clean/kde-dev.tok.de,
+       kde-clean/kde-test.tok.en,
+       kde-clean/kde-test.tok.de,
+       php-clean/php-train.tok.clean.en,
+       php-clean/php-train.tok.clean.de,
+       php-clean/php-dev.tok.en,
+       php-clean/php-dev.tok.de,
+       php-clean/php-test.tok.en,
+       php-clean/php-test.tok.de,
+       koran-clean/koran-train.tok.clean.en,
+       koran-clean/koran-train.tok.clean.de,
+       koran-clean/koran-dev.tok.en,
+       koran-clean/koran-dev.tok.de,
+       koran-clean/koran-test.tok.en,
+       koran-clean/koran-test.tok.de,
+       ubuntu-clean/ubuntu-train.tok.clean.en,
+       ubuntu-clean/ubuntu-train.tok.clean.de,
+       ubuntu-clean/ubuntu-dev.tok.en,
+       ubuntu-clean/ubuntu-dev.tok.de,
+       ubuntu-clean/ubuntu-test.tok.en,
+       ubuntu-clean/ubuntu-test.tok.de,
+       GNOME-clean/GNOME-train.tok.clean.en,
+       GNOME-clean/GNOME-train.tok.clean.de,
+       GNOME-clean/GNOME-dev.tok.en,
+       GNOME-clean/GNOME-dev.tok.de,
+       GNOME-clean/GNOME-test.tok.en,
+       GNOME-clean/GNOME-test.tok.de,
       #  ecb/ecb-train.tok.clean.en,
       #  ecb/ecb-train.tok.clean.de,
       #  ecb/ecb-dev.tok.en,
       #  ecb/ecb-dev.tok.de,
       #  ecb/ecb-test.tok.en,
       #  ecb/ecb-test.tok.de,
-       laws-clean/laws-train.tok.clean.en,
-       laws-clean/laws-train.tok.clean.de,
-       laws-clean/laws-dev.tok.en,
-       laws-clean/laws-dev.tok.de,
-       laws-clean/laws-test.tok.en,
-       laws-clean/laws-test.tok.de,
-       medical-clean/medical-train.tok.clean.en,
-       medical-clean/medical-train.tok.clean.de,
-       medical-clean/medical-dev.tok.en,
-       medical-clean/medical-dev.tok.de,
-       medical-clean/medical-test.tok.en,
-       medical-clean/medical-test.tok.de,
+      #  laws-clean/laws-train.tok.clean.en,
+      #  laws-clean/laws-train.tok.clean.de,
+      #  laws-clean/laws-dev.tok.en,
+      #  laws-clean/laws-dev.tok.de,
+      #  laws-clean/laws-test.tok.en,
+      #  laws-clean/laws-test.tok.de,
+      #  medical-clean/medical-train.tok.clean.en,
+      #  medical-clean/medical-train.tok.clean.de,
+      #  medical-clean/medical-dev.tok.en,
+      #  medical-clean/medical-dev.tok.de,
+      #  medical-clean/medical-test.tok.en,
+      #  medical-clean/medical-test.tok.de,
       #  it/it-train.tok.clean.en,
       #  it/it-train.tok.clean.de,
       #  it/it-dev.tok.en,
@@ -167,29 +239,29 @@ concat:
   - {files: [], obj_file: }
 
 save_tsv:
-  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-train.tok.clean.bpe.en, 
-                   trg: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-train.tok.clean.bpe.de}, 
-     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-train.tok.clean.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-train.tok.clean.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train.tsv}
 
-  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-dev.tok.bpe.en, 
-                   trg: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-dev.tok.bpe.de}, 
-     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-dev.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-dev.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.tsv}
 
-  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-test.tok.bpe.en, 
-                   trg: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-test.tok.bpe.de}, 
-     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-test.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-test.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/laws-clean/laws-test.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-test.tsv}
 
-  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-train.tok.clean.bpe.en, 
-                   trg: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-train.tok.clean.bpe.de}, 
-     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-train.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-train.tok.clean.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-train.tok.clean.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-train.tsv}
 
-  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-dev.tok.bpe.en, 
-                   trg: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-dev.tok.bpe.de}, 
-     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-dev.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-dev.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.tsv}
 
-  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-test.tok.bpe.en, 
-                   trg: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-test.tok.bpe.de}, 
-     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-test.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-test.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/medical-clean/medical-test.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-test.tsv}
 
   # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/it/it-train.tok.clean.bpe.en, 
   #                  trg: /home/zhengx/data/wmt14_adapt_dataset/it/it-train.tok.clean.bpe.de}, 
@@ -235,17 +307,17 @@ save_tsv:
   #                  trg: /home/zhengx/data/wmt14_adapt_dataset/iwslt2015/IWSLT15.TED.tst2014.en-de.tok.bpe.de}, 
   #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/iwslt2015/tst2014.tsv}
 
-#   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/books/books-train.tok.clean.bpe.en, 
-#                    trg: /home/zhengx/data/wmt14_adapt_dataset/books/books-train.tok.clean.bpe.de}, 
-#      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/books/books-train.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/books/books-train.tok.clean.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/books/books-train.tok.clean.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/books/books-train.tsv}
 
-#   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/books/books-dev.tok.bpe.en, 
-#                    trg: /home/zhengx/data/wmt14_adapt_dataset/books/books-dev.tok.bpe.de}, 
-#      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/books/books-dev.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/books/books-dev.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/books/books-dev.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/books/books-dev.tsv}
 
-#   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/books/books-test.tok.bpe.en, 
-#                    trg: /home/zhengx/data/wmt14_adapt_dataset/books/books-test.tok.bpe.de}, 
-#      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/books/books-test.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/books/books-test.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/books/books-test.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/books/books-test.tsv}
 
 #   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/php/php-train.tok.clean.bpe.en, 
 #                    trg: /home/zhengx/data/wmt14_adapt_dataset/php/php-train.tok.clean.bpe.de}, 
@@ -283,21 +355,21 @@ save_tsv:
   #                  trg: /home/zhengx/data/wmt14_adapt_dataset/subtitles/subtitles-test.tok.bpe.de}, 
   #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/subtitles/subtitles-test.tsv}
 
-#   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/bible/bible-train.tok.clean.bpe.en, 
-#                    trg: /home/zhengx/data/wmt14_adapt_dataset/bible/bible-train.tok.clean.bpe.de}, 
-#      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/bible/bible-train.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-train.tok.clean.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-train.tok.clean.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-train.tsv}
 
-#   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/bible/bible-dev.tok.bpe.en, 
-#                    trg: /home/zhengx/data/wmt14_adapt_dataset/bible/bible-dev.tok.bpe.de}, 
-#      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/bible/bible-dev.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-dev.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-dev.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-dev.tsv}
 
-#   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/bible/bible-test.tok.bpe.en, 
-#                    trg: /home/zhengx/data/wmt14_adapt_dataset/bible/bible-test.tok.bpe.de}, 
-#      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/bible/bible-test.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-test.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-test.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-test.tsv}
 
-#   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-train.tok.clean.bpe.en, 
-#                    trg: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-train.tok.clean.bpe.de}, 
-#      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/ecb/ecb-train.tsv}
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-train.tok.clean.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-train.tok.clean.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/ecb/ecb-train.tsv}
 
 #   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-dev.tok.bpe.en, 
 #                    trg: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-dev.tok.bpe.de}, 
@@ -306,3 +378,79 @@ save_tsv:
 #   - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-test.tok.bpe.en, 
 #                    trg: /home/zhengx/data/wmt14_adapt_dataset/ecb/ecb-test.tok.bpe.de}, 
 #      tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/ecb/ecb-test.tsv}
+
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/education/QED-train.tok.clean.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/education/QED-train.tok.clean.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/education/QED-train.tsv}
+
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/education/QED-dev.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/education/QED-dev.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/education/QED-dev.tsv}
+
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/education/QED-test.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/education/QED-test.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/education/QED-test.tsv}
+
+  # - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-test.tok.bpe.en, 
+  #                  trg: /home/zhengx/data/wmt14_adapt_dataset/bible-clean/bible-test.tok.bpe.de}, 
+  #    tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/bible-clean/bible-test.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/kde-clean/kde-train.tok.clean.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/kde-clean/kde-train.tok.clean.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/kde-clean/kde-train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/kde-clean/kde-dev.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/kde-clean/kde-dev.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/kde-clean/kde-dev.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/kde-clean/kde-test.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/kde-clean/kde-test.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/kde-clean/kde-test.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean/ubuntu-train.tok.clean.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean/ubuntu-train.tok.clean.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/ubuntu-clean/ubuntu-train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean/ubuntu-dev.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean/ubuntu-dev.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/ubuntu-clean/ubuntu-dev.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean/ubuntu-test.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/ubuntu-clean/ubuntu-test.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/ubuntu-clean/ubuntu-test.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/koran-clean/koran-train.tok.clean.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/koran-clean/koran-train.tok.clean.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/koran-clean/koran-train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/koran-clean/koran-dev.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/koran-clean/koran-dev.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/koran-clean/koran-dev.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/koran-clean/koran-test.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/koran-clean/koran-test.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/koran-clean/koran-test.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean/GNOME-train.tok.clean.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean/GNOME-train.tok.clean.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/GNOME-clean/GNOME-train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean/GNOME-dev.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean/GNOME-dev.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/GNOME-clean/GNOME-dev.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean/GNOME-test.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/GNOME-clean/GNOME-test.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/GNOME-clean/GNOME-test.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/php-clean/php-train.tok.clean.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/php-clean/php-train.tok.clean.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/php-clean/php-train.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/php-clean/php-dev.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/php-clean/php-dev.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/php-clean/php-dev.tsv}
+
+  - {tsv_format: { src: /home/zhengx/data/wmt14_adapt_dataset/php-clean/php-test.tok.bpe.en, 
+                   trg: /home/zhengx/data/wmt14_adapt_dataset/php-clean/php-test.tok.bpe.de}, 
+     tsv_path: /home/zhengx/data/wmt14_adapt_dataset_share/php-clean/php-test.tsv}

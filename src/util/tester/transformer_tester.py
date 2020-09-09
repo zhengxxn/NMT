@@ -4,6 +4,8 @@ from util.model_builder import ModelBuilder
 from util.decoding.transformer_decoding import beam_search
 from util.convenient_funcs import create_path, tensor2str, de_bpe, get_path_prefix
 from util.batch.transformer_batch import SrcTestBatch
+from module.criterion.test_nll_loss import TestNLLLoss
+from util.batch.transformer_batch import TrainingBatch
 from tqdm import tqdm
 import os
 import sacrebleu
@@ -56,6 +58,9 @@ class TransformerTester:
 
         model = model.to(device)
         self.model = model
+
+        self.test_criterion = TestNLLLoss(size=len(self.vocab['trg']),
+                                          padding_idx=self.vocab['trg'].stoi['<pad>'])
 
     def decoding_step(self, batch):
 
@@ -126,6 +131,40 @@ class TransformerTester:
                 print()
                 print('bleu scores: ', bleu_score)
                 print()
+
+    def test_step(self, batch):
+        new_batch = self.rebatch(batch)
+        log_prob = self.model.forward(new_batch.src,
+                                      new_batch.src_mask,
+                                      new_batch.trg_input,
+                                      new_batch.trg,
+                                      new_batch.trg_mask)['log_prob']
+        loss = self.test_criterion(
+            log_prob.contiguous(),
+            new_batch.trg.contiguous(),
+        )  # [batch]
+
+        return loss
+
+    def rebatch(self, batch, option=None):
+        return TrainingBatch(batch, pad=self.vocab['trg'].stoi['<pad>'])
+
+    def test_loss(self):
+
+        loss_list = []
+
+        self.model.eval()
+        with torch.no_grad():
+            for test_iterator in self.test_iterators:
+                cur_data_loss = []
+                with tqdm(test_iterator) as bar:
+                    bar.set_description("loss validation")
+                    for batch in bar:
+
+                        loss = self.test_step(batch).tolist()
+                        cur_data_loss = cur_data_loss + loss
+                loss_list.append(cur_data_loss)
+        return loss_list
 
     def visualize_hidden_state(self, save_file):
 

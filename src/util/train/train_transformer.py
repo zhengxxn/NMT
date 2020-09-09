@@ -78,6 +78,7 @@ def main():
     trainer = Trainer(
         model=model,
         criterion=criterion,
+        validation_criterion=validation_criterion,
         vocab=vocab,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,

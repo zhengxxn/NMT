@@ -20,7 +20,15 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     tester = TransformerTester(config, device, model_name='transformer')
-    tester.decoding()
+
+    if 'test_loss' in config['Test'].keys() and config['Test']['test_loss'] is True:
+        loss_list = tester.test_loss()
+        for loss, path in zip(loss_list, config['Test']['output_path']):
+            with open(path, 'w') as f:
+                loss = [str(l) for l in loss]
+                f.write('\n'.join(loss))
+    else:
+        tester.decoding()
 
 
 if __name__ == "__main__":

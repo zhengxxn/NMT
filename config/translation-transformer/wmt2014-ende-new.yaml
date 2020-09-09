@@ -1,5 +1,5 @@
 Annotation:
-  device: 1080ti2 0
+  device: v100-7
   language: en-de
   dataset: wmt2014 en-de, bpe 32k, vocab 37k, share vocab
   what: transformer, 
@@ -17,9 +17,6 @@ Dataset:
     # - "/home/zhengx/data/wmt2014-ende-share/newstest2013.tsv"
     - "/home/zhengx/data/wmt2014-ende-share/newstest2014.tsv"
   
-  target_language: de
-  detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
-  detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
   combine_train_datasets: False
   filter_len: 200
 
@@ -39,6 +36,7 @@ Model:
   head_num: 8
   dropout_rate: 0.1
   num_layers: 6
+  layer_norm_rescale: True
 
   share_enc_dec_embedding: True
   share_decoder_embedding: True
@@ -47,42 +45,47 @@ Model:
   generator_bias: False
 
 Criterion:
-  # name: nll
-  # label_smoothing: 0.1
-  # reduction: mean
-
-  name: kl_divergence
+  name: nll
   label_smoothing: 0.1
-  reduction: sum
+  reduction: mean
 
-  
+  # name: kl_divergence
+  # label_smoothing: 0.1
+  # reduction: sum
 
 Optimizer:
-  beta2: 0.998
+  beta2: 0.98
+  lr_rate: 1.0e-7
   lr_scheduler:
-    name: noam
-    factor: 2.0
-    warmup_steps: 8000
-    model_size: 512
+    # name: noam
+    # factor: 2.0
+    # warmup_steps: 8000
+    # model_size: 512
+    name: inverse_sqrt
+    warmup_steps: 4000
+    init_lr: 1.0e-7
+    max_lr: 0.0007
+    min_lr: 1.0e-9
   grad_clip: -1.0
 
-
 Train:
-  use_multiple_gpu: True
+  use_multiple_gpu: False
 
   random_seed: 1234
   load_exist_model: False # load model
-  model_load_path:
+  model_load_path: 
   load_optimizer: False  # load model and optimizer
   optimizer_path: 
+  load_lr_scheduler: False
+  lr_scheduler_path: 
 
-  batch_size: 6000
-  update_batch_count: 4
+  batch_size: 16000
+  update_batch_count: 1
   epoch_num: 50
 
 Validation:
   
-  batch_size: 24
+  batch_size: 64
 
   loss_validation:
     start_on_steps: 1000
@@ -105,18 +108,16 @@ Validation:
       length_penalty: True
       alpha: 0.6
 
-  # Bleu:
-  #   gram: 4
-  #   level: word
-
 Test:
 
   refs: [
     # /home/zhengx/data/wmt2014-ende-share/newstest2013.de,
     /home/zhengx/data/wmt2014-ende-share/newstest2014.de
   ]
-
-  model_path: /home/zhengx/model_save/wmt2014-ende/6000-4/average_model
+  
+  # model_path: /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/loss_best/model
+  model_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
+  # model_path: /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale_inverse_sqrt/loss_best/model
   save_in_multi_gpu: False
   
   output_path:
@@ -129,7 +130,7 @@ Test:
   detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
   detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
 
-  batch_size: 40
+  batch_size: 128
   tag: translation
 
   beam_search:
@@ -140,10 +141,10 @@ Test:
 
 
 Record:
-  training_record_path: "/home/user_data55/zhengx/project/record-new/wmt2014-ende/6000-4"
+  training_record_path: /home/user_data55/zhengx/record/wmt14-ende/no_layer_norm_rescale_inverse_sqrt_16000
   
   model_record:
-    path: /home/zhengx/model_save/wmt2014-ende/6000-4
+    path: /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale_inverse_sqrt_16000_1
     best_model_save:
       loss_best: True
       bleu_best: True
@@ -159,12 +160,15 @@ Record:
       save_checkpoint_count: 5
 
 AverageModel:
-  save_in_multi_gpu: True
+  model_name: transformer
+  save_in_multi_gpu: False
   load_path:
-    - /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best/model
-    # -  /home/zhengx/model_save/wmt2014-ende/6000-4/checkpoint0/model
-    # -  /home/zhengx/model_save/wmt2014-ende/6000-4/checkpoint1/model
-    # -  /home/zhengx/model_save/wmt2014-ende/6000-4/checkpoint2/model
-    # -  /home/zhengx/model_save/wmt2014-ende/6000-4/checkpoint3/model
-    # -  /home/zhengx/model_save/wmt2014-ende/6000-4/checkpoint4/model
-  save_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
+    # - /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best/model
+    -  /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/checkpoint0/model
+    -  /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/checkpoint1/model
+    -  /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/checkpoint2/model
+    -  /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/checkpoint3/model
+    -  /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/checkpoint4/model
+  save_path: /home/zhengx/model_save/wmt14-ende/no_layer_norm_rescale/average_best_model
+
+visualize_file: /home/zhengx/visualize/wmt14_adapt/news

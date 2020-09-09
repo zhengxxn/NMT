@@ -8,16 +8,18 @@ Annotation:
 
 Dataset:
   train_dataset_path:
-    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train.tsv" # bpe size 32000
+    - /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train.tsv
+    # - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train-part1.tsv" # bpe size 32000
+    # - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train-part2.tsv"
 
   dev_dataset_path:
     - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.tsv"
 
   test_dataset_path:
     - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.tsv"
-    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-test.tsv"
+    # - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-test.tsv"
 
-  combine_train_datasets: False
+  combine_train_datasets: True
   filter_len: 200
 
 Vocab:
@@ -55,14 +57,14 @@ Optimizer:
   beta2: 0.998
   lr_rate: 5.0e-4
   lr_scheduler:
-    name: noam
-    factor: 2.0
-    warmup_steps: 8000
-    model_size: 512
-#    name: reduce_lr_on_loss
-#    factor: 0.5
-#    patience: 5
-#    min_lr: 5.0e-6
+    # name: noam
+    # factor: 2.0
+    # warmup_steps: 8000
+    # model_size: 512
+    name: reduce_lr_on_bleu
+    factor: 0.5
+    patience: 5
+    min_lr: 5.0e-6
   grad_clip: -1.0
 
 
@@ -70,15 +72,16 @@ Train:
   use_multiple_gpu: False
 
   random_seed: 1234
-  load_exist_model: False # load model
+  load_exist_model: True # load model
+  # model_load_path: /home/zhengx/model_save/wmt14-2-laws/part1-finetune/bleu_best/model
   model_load_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
   load_optimizer: False  # load model and optimizer
   optimizer_path:
   load_lr_scheduler: False
   lr_scheduler_path:
 
-  batch_size: 4000
-  update_batch_count: 3
+  batch_size: 3000
+  update_batch_count: 4
   epoch_num: 500
 
 Validation:
@@ -134,10 +137,10 @@ Test:
     alpha: 0.6
 
 Record:
-  training_record_path: "/home/user_data55/zhengx/record/wmt14-2-laws/single-2048-01"
+  training_record_path: "/home/user_data55/zhengx/record/wmt14-2-laws/finetune-reduce-on-bleu"
   
   model_record:
-    path: /home/zhengx/model_save/wmt14-2-laws/single-2048-01
+    path: /home/zhengx/model_save/wmt14-2-laws/finetune-reduce-on-bleu
     best_model_save:
       loss_best: True
       bleu_best: True
@@ -151,3 +154,5 @@ Record:
       save_optimizer: False
       save_lr_scheduler: False
       save_checkpoint_count: 0
+
+visualize_file: /home/zhengx/visualize/wmt14_adapt/laws

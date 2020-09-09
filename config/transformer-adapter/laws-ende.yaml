@@ -1,14 +1,15 @@
 Annotation:
-  device:
-  language:
-  dataset:
-  what:
-  hyper_parameter:
-  log_file:
+  device: 
+  language: 
+  dataset: 
+  what:  
+  hyper_parameter: 
+  log_file: 
 
 Dataset:
   train_dataset_path:
-    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train.tsv" # bpe size 32000
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train-part1.tsv" # bpe size 32000
+    # - /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-train.tsv # bpe size 32000
 
   dev_dataset_path:
     - "/home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.tsv"
@@ -35,9 +36,15 @@ Model:
   head_num: 8
   dropout_rate: 0.1
   num_layers: 6
-  share_embedding: False
-  adapter_domains: ['laws']
-  adapter_bottleneck_size: 512
+  
+
+  share_enc_dec_embedding: True
+  share_decoder_embedding: True
+
+  adapter_dict: ['laws']
+  adapter_bottleneck_size: [8192]
+  # generator
+  generator_bias: False
 
 Criterion:
   # name: nll
@@ -50,45 +57,51 @@ Criterion:
 
 Optimizer:
   beta2: 0.998
-  lr_rate: 0.00005
+  lr_rate: 5.0e-4
   lr_scheduler:
-    name: noam
-    factor: 2.0
-    warmup_steps: 8000
-    model_size: 512
+    name: reduce_lr_on_bleu
+    factor: 0.5
+    patience: 5
+    min_lr: 5.0e-6
+    # name: noam
+    # factor: 2.0
+    # warmup_steps: 8000
+    # model_size: 512
   grad_clip: -1.0
 
 
 Train:
-  target_domain: medical
+  target_domain: laws
   use_multiple_gpu: False
 
   random_seed: 1234
   load_exist_model: True # load model
   model_load_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
   load_optimizer: False  # load model and optimizer
-  optimizer_path:
+  optimizer_path: 
+  load_lr_scheduler: False
+  lr_scheduler_path: 
 
-  batch_size: 12000
-  update_batch_count: 1
+  batch_size: 6000
+  update_batch_count: 2
   epoch_num: 500
 
 Validation:
-
+  
   batch_size: 64
 
   loss_validation:
     start_on_steps: 1000
     frequency: 1000
-
+  
   bleu_validation:
-    start_on_steps: 2000
+    start_on_steps: 1000
     frequency: 1000
 
     tokenize: intl
     target_language: de
     use_bpe: True
-    ref: /home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.de
+    ref: /home/zhengx/data/wmt14_adapt_dataset_share/laws-clean/laws-dev.de
     detruecase_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/recaser/detruecase.perl
     detokenize_script: /home/user_data55/zhengx/project/DomainAdaptationForTranslation/scripts/tokenizer/detokenizer.perl
 
@@ -126,16 +139,16 @@ Test:
     alpha: 0.6
 
 Record:
-  training_record_path: "/home/user_data55/zhengx/project/record-new/wmt14-2-medical/adapter-8192"
-
+  training_record_path: /home/user_data55/zhengx/record/wmt14-2-laws/adapter-8192-noam-update-2
+  
   model_record:
-    path: /home/zhengx/model_save/wmt14-2-medical/adapter-8192
+    path: /home/zhengx/model_save/wmt14-2-laws/adapter-8192-noam-update-2
     best_model_save:
       loss_best: True
       bleu_best: True
       save_optimizer: False
       save_lr_scheduler: False
-
+    
     # save last checkpoint
     last_checkpoint_save:
       start_on_steps: 50000

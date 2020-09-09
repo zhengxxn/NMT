@@ -8,14 +8,14 @@ Annotation:
 
 Dataset:
   train_dataset_path:
-    - /Users/zx/Documents/mt_data_analysis/laws-ende-share/train.tsv # bpe size 32000
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-train.tsv" # bpe size 32000
 
   dev_dataset_path:
-    - /Users/zx/Documents/mt_data_analysis/laws-ende-share/dev.tsv
+    - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.tsv"
 
   test_dataset_path:
     - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-dev.tsv"
-    - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-test.tsv"
+    # - "/home/zhengx/data/wmt14_adapt_dataset_share/medical-clean/medical-test.tsv"
 
   combine_train_datasets: False
   filter_len: 200
@@ -23,15 +23,15 @@ Dataset:
 Vocab:
   use_bpe: True
   src:
-    file: /Users/zx/Documents/mt_data_analysis/laws-ende-share/vocab.en
+    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
     max_size: 37000
   trg:
-    file: /Users/zx/Documents/mt_data_analysis/laws-ende-share/vocab.de
+    file: "/home/zhengx/data/wmt14_adapt_dataset_share/vocab"
     max_size: 37000
 
 Model:
   feature_size: 512
-  feedforward_dim: 1024
+  feedforward_dim: 2048
   head_num: 8
   dropout_rate: 0.1
   num_layers: 6
@@ -53,12 +53,16 @@ Criterion:
 
 Optimizer:
   beta2: 0.998
-  lr_rate: 0.00005
+  lr_rate: 5.0e-4
   lr_scheduler:
-    name: noam
-    factor: 2.0
-    warmup_steps: 8000
-    model_size: 512
+    # name: noam
+    # factor: 2.0
+    # warmup_steps: 8000
+    # model_size: 512
+   name: reduce_lr_on_bleu
+   factor: 0.5
+   patience: 5
+   min_lr: 5.0e-6
   grad_clip: -1.0
 
 
@@ -66,18 +70,20 @@ Train:
   use_multiple_gpu: False
 
   random_seed: 1234
-  load_exist_model: False # load model
+  load_exist_model: True # load model
   model_load_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
   load_optimizer: False  # load model and optimizer
-  optimizer_path: 
+  optimizer_path:
+  load_lr_scheduler: False
+  lr_scheduler_path:
 
-  batch_size: 2500
-  update_batch_count: 5
+  batch_size: 12000
+  update_batch_count: 1
   epoch_num: 500
 
 Validation:
   
-  batch_size: 24
+  batch_size: 64
 
   loss_validation:
     start_on_steps: 1000
@@ -113,7 +119,7 @@ Test:
 
 
   save_in_multi_gpu: False
-  model_path: /home/zhengx/model_save/wmt14-2-medical/single-1024/bleu_best/model
+  model_path: /home/zhengx/model_save/wmt2014-ende/6000-4/loss_best_model
 
   tokenize: intl
   target_language: de
@@ -131,10 +137,10 @@ Test:
     alpha: 0.6
 
 Record:
-  training_record_path: "/home/user_data55/zhengx/project/record-new/wmt14-2-medical/single-1024"
+  training_record_path: "/home/user_data55/zhengx/record/wmt14-2-medical/finetune-bleu"
   
   model_record:
-    path: /home/zhengx/model_save/wmt14-2-medical/single-1024
+    path: /home/zhengx/model_save/wmt14-2-medical/finetune-bleu
     best_model_save:
       loss_best: True
       bleu_best: True
@@ -148,3 +154,5 @@ Record:
       save_optimizer: False
       save_lr_scheduler: False
       save_checkpoint_count: 0
+
+visualize_file: /home/zhengx/visualize/wmt14_adapt/medical
