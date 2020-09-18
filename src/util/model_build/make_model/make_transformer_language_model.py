@@ -22,7 +22,7 @@ def make_transformer_language_model(model_config, vocab):
 
     model = TransformerLanguageModel(
         embedding_layer=Embeddings(
-            vocab_size=len(vocab['src']),
+            vocab_size=len(vocab['text']),
             emb_size=model_config['feature_size'],
             dropout=model_config['dropout_rate'],
             max_len=5000
@@ -38,7 +38,7 @@ def make_transformer_language_model(model_config, vocab):
             layer_norm_rescale=model_config['layer_norm_rescale'],
         ),
         generator=SimpleGenerator(feature_size=model_config['feature_size'],
-                                  vocab_size=len(vocab['trg']),
+                                  vocab_size=len(vocab['text']),
                                   bias=model_config['generator_bias']),
         vocab=vocab,
         share_embedding=model_config['share_embedding'],

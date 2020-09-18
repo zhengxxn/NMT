@@ -33,6 +33,9 @@ def main():
     lm_data_loader.build_vocab()
     lm_data_loader.build_iterators(device=device, build_train=True, build_dev=True, build_test=False)
 
+    for i in range(5):
+        print(lm_data_loader.train_datasets[0].examples[i].text)
+
     vocab = lm_data_loader.vocab
     train_iterators = lm_data_loader.train_iterators
     dev_iterators = lm_data_loader.dev_iterators
