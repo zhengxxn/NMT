@@ -4,7 +4,7 @@ from module.adapter.feedforward_adapter_layer import FeedForwardAdapterLayer
 from module.sublayer_connection.sublayer_connection import SublayerConnection
 
 
-class MixtureOfAdapter(nn.Module):
+class MixtureOfAdapterWithClassifier(nn.Module):
 
     def __init__(self,
                  adapter_type,
@@ -19,6 +19,7 @@ class MixtureOfAdapter(nn.Module):
         Suppose we have some trained different domain adapter now,
         if the module contains a inner gate, then the gate will provide a mix weight,
 
+        and the gate is optimized both translation and classify result.
 
         :param domain_adapter_dict:
         :param feature_size:
@@ -27,7 +28,7 @@ class MixtureOfAdapter(nn.Module):
         :param domain_inner_gate_list:
         :param max_domain_num:
         """
-        super(MixtureOfAdapter, self).__init__()
+        super(MixtureOfAdapterWithClassifier, self).__init__()
 
         # todo: add parallel
         if adapter_type != 'stack':
@@ -62,9 +63,6 @@ class MixtureOfAdapter(nn.Module):
                 nn.Linear(in_features=max_domain_num, out_features=max_domain_num))
         self.inner_gate = inner_gate
 
-        # if has_inner_gate:
-        #     self.inner_gate = nn.Linear(in_features=feature_size, out_features=max_domain_num)
-
     def forward(self,
                 x,
                 target_domain,
@@ -89,9 +87,14 @@ class MixtureOfAdapter(nn.Module):
         # if we only use one adapter
         if mix_output is False:
             if target_domain == 'news':
-                return x
+                return {'output': x}
             else:
-                return self.sublayer_connection_for_adapter[target_domain](x, self.adapter_layers[target_domain])
+                classify_logits = self.inner_gate[target_domain](x)  # [B, S, D_Max]
+                classify_logits = torch.masked_fill(classify_logits, domain_mask == 0, -1e9)
+                # classify_prob = torch.softmax(mix_weight, dim=-1)
+                return {'output': self.sublayer_connection_for_adapter[target_domain](x, self.adapter_layers[
+                    target_domain]),
+                        'classify_logits': classify_logits}
 
         # else we should mix the current adapters output
         else:
@@ -107,14 +110,14 @@ class MixtureOfAdapter(nn.Module):
                         domain_mask[self.domain_dict[domain]] = 1
                     domain_mask = torch.Tensor(domain_mask).to(x.device)
 
-                mix_weight = self.inner_gate[target_domain](x)  # [B, S, D_Max]
-                mix_weight = torch.masked_fill(mix_weight, domain_mask == 0, -1e9)
-                mix_weight = torch.softmax(mix_weight, dim=-1)
+                classify_logits = self.inner_gate[target_domain](x)  # [B, S, D_Max]
+                classify_logits = torch.masked_fill(classify_logits, domain_mask == 0, -1e9)
+                classify_prob = torch.softmax(classify_logits, dim=-1)
 
                 # print(mix_weight)
                 used_domain_idx = domain_mask.nonzero().flatten()
-                select_mix_weight = mix_weight.index_select(dim=-1,
-                                                            index=used_domain_idx)  # [B, S, D_Max] -> [B, S, D_Used]
+                select_mix_weight = classify_prob.index_select(dim=-1,
+                                                               index=used_domain_idx)  # [B, S, D_Max] -> [B, S, D_Used]
                 # print(mix_weight)
 
             else:
@@ -137,7 +140,8 @@ class MixtureOfAdapter(nn.Module):
             mix_adapter_outputs = torch.matmul(adapter_outputs, select_mix_weight).squeeze(-1)
 
             # residual
-            return x + mix_adapter_outputs, mix_weight
+            # assume mix weight is always None todo
+            return {'output': x + mix_adapter_outputs, 'classify_logits': classify_logits}
 
     def check_domain_list_order(self, used_domain_list):
         order = [self.domain_dict[domain] for domain in used_domain_list]
@@ -157,13 +161,13 @@ if __name__ == "__main__":
         }
     }
 
-    m = MixtureOfAdapter(adapter_type='stack',
-                         domain_adapter_dict=test_domain_adapter_dict,
-                         feature_size=16,
-                         dropout_rate=0.2,
-                         domain_list=['books', 'laws', 'medical'],
-                         domain_inner_gate_list=['medical'],
-                         max_domain_num=5)
+    m = MixtureOfAdapterWithClassifier(adapter_type='stack',
+                                       domain_adapter_dict=test_domain_adapter_dict,
+                                       feature_size=16,
+                                       dropout_rate=0.2,
+                                       domain_list=['books', 'laws', 'medical'],
+                                       domain_inner_gate_list=['medical'],
+                                       max_domain_num=5)
 
     batch_size = 3
     seq_len = 4

@@ -56,6 +56,11 @@ class TransformerTester:
         self.detruecase_script = config['Test']['detruecase_script']
         self.detokenize_script = config['Test']['detokenize_script']
 
+        if 'detruecase' in config['Test']:
+            self.detruecase = config['Test']['detrucase']
+        else:
+            self.detruecase = False
+
         model = model.to(device)
         self.model = model
 
@@ -111,13 +116,19 @@ class TransformerTester:
 
                 test_initial_output_path = test_output_path + '.initial'
                 detruecase_path = test_output_path + '.detc'
-                # detokenize_path = test_output_path + '.detok'
+
                 with open(test_initial_output_path, 'w', encoding='utf-8') as f:
                     f.write("\n".join(hypotheses))
                     # detruecase
-                    # os.system(detruecase_script + ' < ' + test_initial_output_path + ' > ' + detruecase_path)
-                    os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + test_initial_output_path +
-                              ' > ' + test_output_path)
+                    if self.detruecase:
+                        os.system(self.detruecase_script + ' < ' + test_initial_output_path + ' > ' + detruecase_path)
+                        os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + detruecase_path +
+                                  ' > ' + test_output_path)
+                    else:
+
+                        os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + test_initial_output_path +
+                                  ' > ' + test_output_path)
+                        
                 with open(test_output_path, 'r', encoding='utf-8') as f:
                     hypotheses = f.read().splitlines()
 
