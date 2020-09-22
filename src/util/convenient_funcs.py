@@ -56,7 +56,9 @@ def new_save_to_tsv(config, tsv_file_path):
     for key in config.keys():
         file_name = config[key]
         with open(file_name, encoding='utf-8') as f:
-            lines = f.read().splitlines()  # split('\n')[:-1]
+            lines = f.read().split('\n')[:-1] # .splitlines()
+            print(len(lines))
+            # split('\n')[:-1]
             value = [line for line in lines]
             raw_data[key] = value
 

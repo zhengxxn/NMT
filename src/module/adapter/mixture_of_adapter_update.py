@@ -7,33 +7,24 @@ from module.sublayer_connection.sublayer_connection import SublayerConnection
 class MixtureOfAdapter(nn.Module):
 
     def __init__(self,
-                 adapter_type,
                  domain_adapter_dict,
                  feature_size,
                  dropout_rate,
                  domain_list: list = None,
                  domain_inner_gate_list: list = None,
-                 max_domain_num: int = None):
+                 gate_activate_func='sigmoid'):
         """
         This module implements the Mixture-Of-Adapter Layer.
-        Suppose we have some trained different domain adapter now,
-        if the module contains a inner gate, then the gate will provide a mix weight,
-
 
         :param domain_adapter_dict:
         :param feature_size:
         :param dropout_rate:
         :param domain_list:
         :param domain_inner_gate_list:
-        :param max_domain_num:
         """
         super(MixtureOfAdapter, self).__init__()
 
-        # todo: add parallel
-        if adapter_type != 'stack':
-            return
-
-        # for all adapter based module
+        # initialization of all adapter based module
         adapter_layers = nn.ModuleDict({})
         sublayer_connection_for_adapter = nn.ModuleDict({})
         for domain in domain_adapter_dict.keys():
@@ -52,92 +43,82 @@ class MixtureOfAdapter(nn.Module):
             self.domain_dict[domain] = i
 
         # domain mix gate
-        self.max_domain_num = max_domain_num
-        self.domain_inner_gate_list = domain_inner_gate_list
-        inner_gate = nn.ModuleDict({})
+        # we regard the adapter output as a modification (direction) of the original ffn module output
+        # the input of each gate is (ffn_output; adapter output), and return a gate (tanh or sigmoid) for the adapter output
+        #
+        domain_gate = nn.ModuleDict({})
         for domain in domain_inner_gate_list:
-            inner_gate[domain] = nn.Sequential(
-                nn.Linear(in_features=feature_size, out_features=max_domain_num),
-                nn.ReLU(),
-                nn.Linear(in_features=max_domain_num, out_features=max_domain_num))
-        self.inner_gate = inner_gate
-
-        # if has_inner_gate:
-        #     self.inner_gate = nn.Linear(in_features=feature_size, out_features=max_domain_num)
+            domain_gate[domain] = nn.Linear(2 * feature_size, 1)
+        self.domain_gate = domain_gate
+        self.gate_activate_func = gate_activate_func
 
     def forward(self,
                 x,
                 target_domain,
                 mix_output: bool = False,
-                used_domain_list: list = None,
-                mix_weight: torch.Tensor = None,
-                domain_mask: torch.Tensor = None):
+                used_domain_list: list = None,):
 
         """
-
-        confirm the order in domain_weight and used_domain_list is same
 
         :param x: [B, L, H]
         :param target_domain: a string, like 'news', 'book', 'bible'
         :param mix_output:
         :param used_domain_list: used domain list, like ['book', 'iwslt']
-        :param mix_weight: [B, L, D]
-        :param domain_mask: [D]
         :return:
         """
 
         # if we only use one adapter
         if mix_output is False:
+
             if target_domain == 'news':
-                return x
+                return {'output': x}
             else:
-                return self.sublayer_connection_for_adapter[target_domain](x, self.adapter_layers[target_domain])
+                return {'output': self.sublayer_connection_for_adapter[target_domain](x, self.adapter_layers[target_domain])}
 
         # else we should mix the current adapters output
         else:
-
+            # confirm the order in domain_weight and used_domain_list is same
             assert self.check_domain_list_order(used_domain_list) is True
-
-            # first, produce the weight based on the input, or provide the weight
-            if mix_weight is None:
-
-                if domain_mask is None:
-                    domain_mask = [0] * self.max_domain_num
-                    for domain in used_domain_list:
-                        domain_mask[self.domain_dict[domain]] = 1
-                    domain_mask = torch.Tensor(domain_mask).to(x.device)
-
-                mix_weight = self.inner_gate[target_domain](x)  # [B, S, D_Max]
-                mix_weight = torch.masked_fill(mix_weight, domain_mask == 0, -1e9)
-                mix_weight = torch.softmax(mix_weight, dim=-1)
-
-                # print(mix_weight)
-                used_domain_idx = domain_mask.nonzero().flatten()
-                select_mix_weight = mix_weight.index_select(dim=-1,
-                                                            index=used_domain_idx)  # [B, S, D_Max] -> [B, S, D_Used]
-                # print(mix_weight)
-
-            else:
-                select_mix_weight = mix_weight
 
             # calculate the adapter outputs separately
             adapter_outputs = []
+            domain_gates = []
+
             for domain in used_domain_list:
-                if domain == 'news':  # this maybe not used, because we use residual connect
+                if domain == 'news':  # this maybe never used, because we use residual connect
                     adapter_outputs.append(x)
                 else:
-                    # here not plus x
+                    # here not plus x, looks like a modification
                     domain_adapter_output = self.sublayer_connection_for_adapter[domain]. \
                         wo_residual_forward(x, self.adapter_layers[domain])
-                    adapter_outputs.append(domain_adapter_output)
+
+                    # use x and domain adapter output to decide the length
+                    domain_gate = self.domain_gate[domain](torch.cat([x, domain_adapter_output], dim=-1))  # [B, S, 1]
+                    if self.gate_activate_func == 'sigmoid':
+                        domain_gate = torch.sigmoid(domain_gate)
+                    else:
+                        domain_gate = torch.tanh(domain_gate)
+
+                    domain_gates.append(domain_gate)
+                    adapter_outputs.append(domain_gate * domain_adapter_output)
 
             # mix the outputs
             adapter_outputs = torch.stack(adapter_outputs, dim=-1)  # [B, L, H, D]
-            select_mix_weight = select_mix_weight.unsqueeze(-1)  # [B, L, D, 1]
-            mix_adapter_outputs = torch.matmul(adapter_outputs, select_mix_weight).squeeze(-1)
-
             # residual
-            return x + mix_adapter_outputs, mix_weight
+            mix_adapter_outputs = torch.sum(adapter_outputs, dim=-1)
+
+            # if target domain is not in used domain_list and not None, it means:
+            #   1. we do not know the target domain, just to mix
+            #   2. we are training for the target domain adapter
+            if target_domain is not None and target_domain not in used_domain_list:
+                mix_adapter_outputs += self.sublayer_connection_for_adapter[target_domain]. \
+                        wo_residual_forward(x, self.adapter_layers[target_domain])
+
+            # if mix adapter output, the return gate for check
+            return {
+                'output': x + mix_adapter_outputs,
+                'mix_gate': domain_gates
+            }
 
     def check_domain_list_order(self, used_domain_list):
         order = [self.domain_dict[domain] for domain in used_domain_list]
@@ -145,6 +126,7 @@ class MixtureOfAdapter(nn.Module):
 
 
 if __name__ == "__main__":
+
     test_domain_adapter_dict = {
         'books': {
             'memory_count': 32,
@@ -157,13 +139,12 @@ if __name__ == "__main__":
         }
     }
 
-    m = MixtureOfAdapter(adapter_type='stack',
+    m = MixtureOfAdapter(
                          domain_adapter_dict=test_domain_adapter_dict,
                          feature_size=16,
                          dropout_rate=0.2,
                          domain_list=['books', 'laws', 'medical'],
-                         domain_inner_gate_list=['medical'],
-                         max_domain_num=5)
+                         domain_inner_gate_list=['books', 'medical'],)
 
     batch_size = 3
     seq_len = 4
@@ -174,4 +155,4 @@ if __name__ == "__main__":
               target_domain='medical',
               mix_output=True,
               used_domain_list=['books', 'medical'],
-              mix_weight=None, )
+              )

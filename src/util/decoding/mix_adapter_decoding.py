@@ -9,8 +9,6 @@ def beam_search(model,
                 max_len, beam_size, length_penalty=False, alpha=-1.0,
                 mix_output: bool = False,
                 used_domain_list: list = None,
-                mix_weight: torch.Tensor = None,
-                domain_mask: torch.Tensor = None,
                 use_multiple_gpu=False):
 
     batch = SrcTestBatch(src, pad_index)
@@ -20,10 +18,10 @@ def beam_search(model,
     # do some initialization
     if use_multiple_gpu:
         initial_state = model.module.prepare_for_decode(batch.src, batch.src_mask,
-                                                        target_domain, mix_output, used_domain_list, mix_weight, domain_mask)
+                                                        target_domain, mix_output, used_domain_list)
     else:
         initial_state = model.prepare_for_decode(batch.src, batch.src_mask,
-                                                 target_domain, mix_output, used_domain_list, mix_weight, domain_mask)
+                                                 target_domain, mix_output, used_domain_list)
 
     prev_y = torch.ones(batch_size).fill_(sos_index).type_as(src)  # sos
     beam = BeamSearch(end_index=eos_index,
