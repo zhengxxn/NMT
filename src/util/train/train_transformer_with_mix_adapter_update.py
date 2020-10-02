@@ -56,7 +56,6 @@ def main():
     }, vocab=vocab)
 
     # training_domain = config['Train']['training_domain']
-    training_stage = config['Train']['stage']
     train_params = config['Train']['params']
 
     for name, param in model.named_parameters():
@@ -107,9 +106,6 @@ def main():
         validation_config=config['Validation'],
         record_config=config['Record'],
         device=device,
-        target_domain=config['Train']['target_domain'],
-        used_domain_list=config['Train']['used_domain_list'],
-        used_inner_gate=config['Train']['used_inner_gate'],
     )
 
     trainer.train()

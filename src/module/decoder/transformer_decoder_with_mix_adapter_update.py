@@ -49,6 +49,7 @@ class TransformerDecoderLayerWithMixAdapter(nn.Module):
                 target_domain=None,
                 mix_output: bool = False,
                 used_domain_list: list = None,
+                go_through_shared_adapter: bool = False
                 ):
         m = memory
 
@@ -71,7 +72,7 @@ class TransformerDecoderLayerWithMixAdapter(nn.Module):
 
         x = self.sublayer(x, self.feed_forward_layer)
 
-        result = self.adapters(x, target_domain, mix_output, used_domain_list)
+        result = self.adapters(x, target_domain, mix_output, used_domain_list, go_through_shared_adapter)
         result['enc_attn_cache'] = new_enc_attn_cache
         result['self_attn_cache'] = new_self_attn_cache
         return result
@@ -100,6 +101,7 @@ class TransformerDecoderWithMixAdapter(nn.Module):
                 target_domain=None,
                 mix_output: bool = False,
                 used_domain_list: list = None,
+                go_through_shared_adapter: bool = False
                 ):
 
         if self_attn_cache_list is None:
@@ -116,6 +118,8 @@ class TransformerDecoderWithMixAdapter(nn.Module):
 
         new_enc_attn_cache_list = []
         new_self_attn_cache_list = []
+        layers_adapter_output_wo_res_connect = []  # without residual connect
+        classify_logits = []
 
         for i, layer in enumerate(self.layers):
 
@@ -136,6 +140,7 @@ class TransformerDecoderWithMixAdapter(nn.Module):
                            cur_layer_target_domain,
                            mix_output,
                            used_domain_list,
+                           layers_adapter_output_wo_res_connect,
                            )
 
             x = result.get('output', None)
@@ -150,6 +155,10 @@ class TransformerDecoderWithMixAdapter(nn.Module):
             else:
                 mix_gate_list[i] = torch.cat([mix_gate_list[i], result.get('mix_gate', None)], dim=1)
 
+            if go_through_shared_adapter:
+                layers_adapter_output_wo_res_connect.append(result['adapter_output'])
+                classify_logits.append(result['classify_logits'])
+
             new_self_attn_cache_list = new_self_attn_cache_list + [result['self_attn_cache']]
             new_enc_attn_cache_list = new_enc_attn_cache_list + [result['enc_attn_cache']]
 
@@ -157,6 +166,8 @@ class TransformerDecoderWithMixAdapter(nn.Module):
             'logits': self.layer_norm(x),
             'adapter_output': adapter_output_list if adapter_output_list[0] is not None else None,
             'mix_gate': mix_gate_list if mix_gate_list[0] is not None else None,
+            'adapter_output_wo_res_connect': layers_adapter_output_wo_res_connect,
+            'classify_logits': classify_logits,
             'self_attn_cache_list': new_self_attn_cache_list,
             'enc_attn_cache_list': new_enc_attn_cache_list,
         }

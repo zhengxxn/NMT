@@ -38,6 +38,8 @@ def make_transformer_with_mix_adapter_update(model_config, vocab):
         domain_list=model_config['domain_list'],
         domain_inner_gate_list=model_config['domain_inner_gate_list'],
         gate_activate_func=model_config['adapter_gate_activate'],
+        stack_between_adapter_and_experts=model_config['stack_between_adapter_and_experts'] if
+        'stack_between_adapter_and_experts' in model_config else False
     )
 
     model = TransformerWithMixAdapter(
@@ -66,9 +68,9 @@ def make_transformer_with_mix_adapter_update(model_config, vocab):
         decoder=TransformerDecoderWithMixAdapter(
             layer=TransformerDecoderLayerWithMixAdapter(feature_size=model_config['feature_size'],
                                                         self_attention_layer=copy.deepcopy(
-                                                         attention_with_cache),
+                                                            attention_with_cache),
                                                         cross_attention_layer=copy.deepcopy(
-                                                         attention_with_cache),
+                                                            attention_with_cache),
                                                         feed_forward_layer=copy.deepcopy(feed_forward),
                                                         adapters=copy.deepcopy(adapter),
                                                         dropout_rate=model_config['dropout_rate'],

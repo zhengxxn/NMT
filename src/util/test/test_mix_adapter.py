@@ -19,7 +19,7 @@ def main():
     # set the device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    tester = MixAdapterTester(config, device, model_name='transformer_with_mix_adapter')
+    tester = MixAdapterTester(config, device, model_name='transformer_with_mix_adapter_update')
 
     if 'test_loss' in config['Test'].keys() and config['Test']['test_loss'] is True:
         loss_list = tester.test_loss()

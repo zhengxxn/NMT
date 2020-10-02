@@ -47,6 +47,22 @@ def main():
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
     print('trained parameters: ')
+
+    if 'params' in config['Train']:
+        train_params = config['Train']['params']
+
+        for name, param in model.named_parameters():
+
+            tag = True
+            for param_filter in train_params:
+                if isinstance(param_filter, str):
+                    if param_filter not in name:
+                        tag = False
+                if isinstance(param_filter, list):
+                    if not any(domain in name for domain in param_filter):
+                        tag = False
+                param.requires_grad = tag
+
     for name, param in model.named_parameters():
         if param.requires_grad:
             print(name, param.shape)

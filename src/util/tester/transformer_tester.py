@@ -128,10 +128,12 @@ class TransformerTester:
 
                         os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + test_initial_output_path +
                                   ' > ' + test_output_path)
-                        
+
                 with open(test_output_path, 'r', encoding='utf-8') as f:
                     hypotheses = f.read().splitlines()
 
+                print(len(hypotheses))
+                print(len(references))
                 bleu_score = sacrebleu.corpus_bleu(hypotheses, [references], tokenize=self.config['Test']['tokenize'])
 
                 print('some examples')
@@ -150,6 +152,7 @@ class TransformerTester:
                                       new_batch.trg_input,
                                       new_batch.trg,
                                       new_batch.trg_mask)['log_prob']
+        # print(new_batch.trg.size())
         loss = self.test_criterion(
             log_prob.contiguous(),
             new_batch.trg.contiguous(),
@@ -171,8 +174,9 @@ class TransformerTester:
                 with tqdm(test_iterator) as bar:
                     bar.set_description("loss validation")
                     for batch in bar:
-
                         loss = self.test_step(batch).tolist()
+                        # print(loss)
+                        loss = [[round(val, 2) for val in batch] for batch in loss]
                         cur_data_loss = cur_data_loss + loss
                 loss_list.append(cur_data_loss)
         return loss_list

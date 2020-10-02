@@ -76,7 +76,7 @@ class Trainer:
         self.decoding_max_steps = validation_config['bleu_validation']['beam_search']['max_steps']
 
         if 'detruecase' in validation_config['bleu_validation']:
-            self.detruecase = validation_config['bleu_validation']['detrucase']
+            self.detruecase = validation_config['bleu_validation']['detruecase']
         else:
             self.detruecase = False
 

@@ -18,8 +18,6 @@ class MixAdapterTester(TransformerTester):
             alpha=self.config['Test']['beam_search']['alpha'],
             mix_output=self.config['Test']['mix_output'],
             used_domain_list=self.config['Test']['used_domain_list'],
-            domain_mask=self.config['Test']['domain_mask'],
-            mix_weight=None,
         )
 
         return search_results

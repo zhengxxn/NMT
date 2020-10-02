@@ -23,12 +23,16 @@ def beam_search(model,
         initial_state = model.prepare_for_decode(batch.src, batch.src_mask,
                                                  target_domain, mix_output, used_domain_list)
 
+    initial_state.pop('enc_adapter_output', None)
+    initial_state.pop('enc_mix_gate', None)
+
     prev_y = torch.ones(batch_size).fill_(sos_index).type_as(src)  # sos
     beam = BeamSearch(end_index=eos_index,
                       max_steps=max_len,
                       beam_size=beam_size,
                       length_penalty=length_penalty,
                       alpha=alpha)
+
     top_k_predictions, log_probabilities = beam.search(start_predictions=prev_y,
                                                        start_state=initial_state,
                                                        step=model.module.decode_step if use_multiple_gpu else model.decode_step)
