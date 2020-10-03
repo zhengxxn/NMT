@@ -7,6 +7,7 @@ import math
 
 
 def update_loss_dict(long_term_loss_dict, current_loss_dict, long_term_tag):
+    # update the epoch or step loss dict with the current step loss dict
     for description in current_loss_dict:
 
         long_term_description = '{}_{}'.format(long_term_tag, description)
@@ -18,6 +19,7 @@ def update_loss_dict(long_term_loss_dict, current_loss_dict, long_term_tag):
 
 
 def set_dict_zero(dic):
+    # for initialize the step loss dict
     for k in dic:
         dic[k] = 0
 
@@ -76,7 +78,7 @@ class Mix_Adapter_Trainer(Trainer):
 
         elif self.train_stage == 'knowledge_distillation':
             self.ref_domain_dict = train_config['ref_domain_dict']
-            self.kl_criterion = torch.nn.KLDivLoss(reduction='sum')
+            self.kl_criterion = torch.nn.KLDivLoss(reduction='none')
 
         elif self.train_stage == 'train_shared_adapter':
 
@@ -288,6 +290,8 @@ class Mix_Adapter_Trainer(Trainer):
         for batch in batches:
             new_batch = self.rebatch(batch)
             ref_logit = {}
+
+            # for ref domain
             model.eval()
             with torch.no_grad():
                 for ref_domain in self.ref_domain_dict.keys():
@@ -296,18 +300,23 @@ class Mix_Adapter_Trainer(Trainer):
                                                ref_domain)
                     ref_logit[ref_domain] = ref_result['logit']
 
+            # for target domain
             model.train()
             target_adapter_result = model.forward(new_batch.src, new_batch.src_mask,
                                                   new_batch.trg_input, new_batch.trg, new_batch.trg_mask,
                                                   self.target_domain)
 
             log_prob = target_adapter_result['log_prob']
-            target_logit = target_adapter_result['logit']
+            target_domain_logit = target_adapter_result['logit']
 
+            # translation_loss
             translation_loss = self.criterion(
                 log_prob.contiguous().view(-1, log_prob.size(-1)),
                 new_batch.trg.contiguous().view(-1)
             )
+
+            # generate trg mask
+            trg_mask = new_batch.trg.ne(self.vocab['trg'].stoi['<pad>'])
 
             # calculate_kd_loss
             kd_loss = 0
@@ -316,9 +325,13 @@ class Mix_Adapter_Trainer(Trainer):
                 temperature = self.ref_domain_dict[ref_domain]['temperature']
                 factor = self.ref_domain_dict[ref_domain]['factor']
 
-                current_domain_kd_loss = factor * (temperature ** 2) * self.kl_criterion(
-                    (target_logit / temperature).log_softmax(-1),
-                    (ref_domain_logit / temperature).softmax(-1))
+                # todo: need mask
+                unreduced_domain_kd_loss = self.kl_criterion(
+                    (target_domain_logit / temperature).log_softmax(-1),
+                    (ref_domain_logit / temperature).softmax(-1)).sum(-1)
+
+                unreduced_domain_kd_loss = unreduced_domain_kd_loss.masked_fill(trg_mask==0, value=0)
+                current_domain_kd_loss = factor * (temperature ** 2) * unreduced_domain_kd_loss.sum()
 
                 loss_dict['{}_kd_loss'.format(ref_domain)] = current_domain_kd_loss.item()
                 kd_loss = kd_loss + current_domain_kd_loss
@@ -335,6 +348,7 @@ class Mix_Adapter_Trainer(Trainer):
             loss_dict['sum_loss'] += loss.item()
             loss_dict['sum_tokens'] += new_batch.ntokens.item()
 
+        # {'sum_loss': , 'sum_tokens': , 'kd_loss': , 'translation_loss': , 'domain_kd_loss': ...}
         return loss_dict
 
     def write_train_loss(self, loss_dict, loss_tag, record_step):
