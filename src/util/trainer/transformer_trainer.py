@@ -4,7 +4,6 @@ from util.convenient_funcs import tensor2str, create_path, de_bpe, get_path_pref
 
 from tensorboardX import SummaryWriter
 
-import nltk
 import sacrebleu
 import torch
 from torch import nn

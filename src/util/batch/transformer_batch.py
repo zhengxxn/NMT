@@ -31,7 +31,7 @@ class TrainingBatch:
         self.trg_input = trg[:, :-1]
         self.trg = trg[:, 1:]
 
-        self.trg_input_mask = (self.trg_input != pad).unsqueeze(-2).to(self.src.device)
+        # self.trg_input_mask = (self.trg_input != pad).unsqueeze(-2).to(self.src.device)
         self.trg_mask = make_std_mask(self.trg_input, pad).to(self.trg.device)
         self.ntokens = (self.trg != pad).data.sum().to(self.trg.device)
 

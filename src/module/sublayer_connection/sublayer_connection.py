@@ -21,3 +21,13 @@ class SublayerConnection(nn.Module):
 
     def wo_residual_forward(self, x, sublayer):
         return self.dropout(sublayer(self.norm(x)))
+
+    def wo_dropout_residual_forward(self, x, sublayer):
+        return sublayer(self.norm(x))
+
+    def parameter_generate_forward(self, x, sublayer, adapter_layers):
+        return x + self.dropout(sublayer(self.norm(x), adapter_layers))
+
+    def forward_used_for_adapter_distillation(self, x, sublayer):
+        output = sublayer(self.norm(x))
+        return x + self.dropout(output), output

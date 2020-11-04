@@ -1,6 +1,9 @@
 import torch.nn as nn
 import torch
 from module.adapter.feedforward_adapter_layer import FeedForwardAdapterLayer
+from module.adapter.memory_adapter_layer import MemoryAdapterLayer
+from module.adapter.parameter_generator_for_adapter import ParameterGeneratorForAdapter
+from module.adapter.adapter_mix_layer import AdapterMixLayer
 from module.sublayer_connection.sublayer_connection import SublayerConnection
 from module.classifier.single_layer_classifier import SingleLayerClassifier
 
@@ -12,10 +15,11 @@ class MixtureOfAdapter(nn.Module):
                  feature_size,
                  dropout_rate,
                  domain_list: list = None,
-                 domain_inner_gate_list: list = None,
-                 gate_activate_func='sigmoid',
-                 stack_between_adapter_and_experts=False,
-                 domain_classifier_dict=None):
+                 # domain_inner_gate_list: list = None,
+                 # gate_activate_func='sigmoid',
+                 # stack_between_adapter_and_experts=False,
+                 # domain_classifier_dict=None
+                 ):
         """
         This module implements the Mixture-Of-Adapter Layer.
 
@@ -28,63 +32,101 @@ class MixtureOfAdapter(nn.Module):
         super(MixtureOfAdapter, self).__init__()
 
         # initialization of all adapter based module
+        self.adapter_types = {}
         adapter_layers = nn.ModuleDict({})
+        domain_mix_layers = nn.ModuleDict({})
         sublayer_connection_for_adapter = nn.ModuleDict({})
+
         for domain in domain_adapter_dict.keys():
-            adapter_layers[domain] = FeedForwardAdapterLayer(input_dim=feature_size,
-                                                             ff_dim=domain_adapter_dict[domain]['memory_count'],
-                                                             dropout=dropout_rate)
-            sublayer_connection_for_adapter[domain] = SublayerConnection(size=feature_size,
-                                                                         dropout=dropout_rate)
+
+            if domain_adapter_dict[domain].get('adapter_type', None) == 'memory':
+
+                adapter_layers[domain] = MemoryAdapterLayer(input_dim=feature_size,
+                                                            ff_dim=domain_adapter_dict[domain]['memory_count'],
+                                                            dropout=dropout_rate)
+
+            elif domain_adapter_dict[domain].get('adapter_type', None) == 'domain_mix':
+
+                domain_mix_layers[domain] = AdapterMixLayer(used_adapters=domain_adapter_dict[domain]['used_adapters'],
+                                                            feature_size=feature_size,
+                                                            dropout_rate=dropout_rate,
+                                                            classifier_dict=domain_adapter_dict[domain]['classifier_dict'])
+
+            elif domain_adapter_dict[domain].get('is_generate', False):
+                adapter_layers[domain] = ParameterGeneratorForAdapter(adapter_dict=domain_adapter_dict,
+                                                                      used_adapters=domain_adapter_dict[domain]['used_adapters'],
+                                                                      generate_dim=domain_adapter_dict[domain]['generate_dim'],
+                                                                      feature_size=feature_size,
+                                                                      bottleneck_dim=domain_adapter_dict[domain]['bottle_neck_dim'],
+                                                                      dropout_rate=dropout_rate,
+                                                                      linear_transform=domain_adapter_dict[domain].get('linear_transform', False))
+                self.adapter_types[domain] = 'generate'
+                sublayer_connection_for_adapter[domain] = SublayerConnection(size=feature_size,
+                                                                             dropout=dropout_rate)
+
+            else:
+                adapter_layers[domain] = FeedForwardAdapterLayer(input_dim=feature_size,
+                                                                 ff_dim=domain_adapter_dict[domain]['memory_count'],
+                                                                 dropout=dropout_rate,
+                                                                 activation_statistic=domain_adapter_dict[domain]['activation_statistic'] if 'activation_statistic' in domain_adapter_dict[domain]
+                                                                 else False)
+                self.adapter_types[domain] = 'simple'
+
+                sublayer_connection_for_adapter[domain] = SublayerConnection(size=feature_size,
+                                                                             dropout=dropout_rate)
+
         self.adapter_layers = adapter_layers
         self.sublayer_connection_for_adapter = sublayer_connection_for_adapter
+        self.domain_mix_layers = domain_mix_layers
 
         # for mixture of experts
-        self.domain_list = domain_list
-        self.domain_dict = {}
-        for i, domain in enumerate(self.domain_list):
-            self.domain_dict[domain] = i
+        # self.domain_list = domain_list
+        # self.domain_dict = {}
+        # for i, domain in enumerate(self.domain_list):
+        #     self.domain_dict[domain] = i
 
         # domain mix gate
         # we regard the adapter output as a modification (direction) of the original ffn module output
         # the input of each gate is (ffn_output; adapter output), and return a gate (tanh or sigmoid) for the adapter output
         #
-        domain_gate = nn.ModuleDict({})
-        for domain in domain_inner_gate_list:
-            domain_gate[domain] = nn.Linear(2 * feature_size, 1)
-        self.domain_gate = domain_gate
-        self.gate_activate_func = gate_activate_func
+        # domain_gate = nn.ModuleDict({})
+        # for domain in domain_inner_gate_list:
+        #     domain_gate[domain] = nn.Linear(2 * feature_size, 1)
+        # self.domain_gate = domain_gate
+        # self.gate_activate_func = gate_activate_func
 
-        if self.gate_activate_func == 'sigmoid':
-            self.gate_activation = nn.Sigmoid()
-        elif self.gate_activate_func == 'tanh':
-            self.gate_activation = nn.Tanh()
-        elif self.gate_activate_func == 'leaky_relu':
-            self.gate_activation = nn.LeakyReLU(negative_slope=0.1)
-        elif self.gate_activate_func == 'relu':
-            self.gate_activation = nn.ReLU()
+        # if self.gate_activate_func == 'sigmoid':
+        #     self.gate_activation = nn.Sigmoid()
+        # elif self.gate_activate_func == 'tanh':
+        #     self.gate_activation = nn.Tanh()
+        # elif self.gate_activate_func == 'leaky_relu':
+        #     self.gate_activation = nn.LeakyReLU(negative_slope=0.1)
+        # elif self.gate_activate_func == 'relu':
+        #     self.gate_activation = nn.ReLU()
 
         # the adapters are not parallel, new adapter is stack upon the old adapters
-        self.stack_between_adapter_and_experts = stack_between_adapter_and_experts
-
-        # add classifier and adversarial module
-        if domain_classifier_dict is not None:
-
-            domain_classifier = nn.ModuleDict({})
-            for k, v in domain_classifier_dict.items():
-                domain_classifier[k] = SingleLayerClassifier(feature_size, v)
-
-            self.domain_classifier = domain_classifier
+        # self.stack_between_adapter_and_experts = stack_between_adapter_and_experts
+        #
+        # # add classifier and adversarial module
+        # if domain_classifier_dict is not None:
+        #
+        #     domain_classifier = nn.ModuleDict({})
+        #     for k, v in domain_classifier_dict.items():
+        #         domain_classifier[k] = SingleLayerClassifier(feature_size, v)
+        #
+        #     self.domain_classifier = domain_classifier
 
     def forward(self,
                 x,
                 target_domain,
                 mix_output: bool = False,
                 used_domain_list: list = None,
-                go_through_shared_adapter: bool = False):
+                # go_through_shared_adapter: bool = False,
+                x_mask=None):
 
         """
 
+        :param x_mask:
         :param go_through_shared_adapter:
         :param x: [B, L, H]
         :param target_domain: a string, like 'news', 'book', 'bible'
@@ -93,8 +135,8 @@ class MixtureOfAdapter(nn.Module):
         :return:
         """
 
-        if go_through_shared_adapter:
-            return self.go_through_shared_adapter(x, target_domain)
+        # if go_through_shared_adapter:
+        #     return self.go_through_shared_adapter(x, target_domain)
 
         # if we only use one adapter
         if mix_output is False:
@@ -102,11 +144,29 @@ class MixtureOfAdapter(nn.Module):
             if target_domain == 'news':
                 return {'output': x}
             else:
-                return {'output': self.sublayer_connection_for_adapter[target_domain](x, self.adapter_layers[
-                    target_domain])}
+                if self.adapter_types[target_domain] == 'generate':
+                    return {'output': self.sublayer_connection_for_adapter[target_domain].parameter_generate_forward(x, self.adapter_layers[
+                        target_domain], self.adapter_layers)}
+
+                elif self.adapter_types[target_domain] == 'simple':
+                    output, adapter_output = self.sublayer_connection_for_adapter[target_domain].forward_used_for_adapter_distillation(x, self.adapter_layers[
+                        target_domain])
+
+                    return {
+                        'output': output,
+                        'adapter_output': adapter_output,
+                    }
+                    # return {'output': self.sublayer_connection_for_adapter[target_domain](x, self.adapter_layers[
+                    #     target_domain])}
+                else:
+                    return None
 
         # else we should mix the current adapters output
         else:
+            # we introduce the mix layer instead of doing in this function
+            output, logits = self.domain_mix_layers[target_domain](x, self.adapter_layers, self.sublayer_connection_for_adapter, x_mask)
+            return {'output': output, 'mix_layer_logits': logits}
+
             # confirm the order in domain_weight and used_domain_list is same
             assert self.check_domain_list_order(used_domain_list) is True
 

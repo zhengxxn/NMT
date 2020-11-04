@@ -39,13 +39,15 @@ class Transformer(nn.Module):
         decoder_state = self.prepare_for_decode(src, src_mask)
 
         decoder_logits, _, _ = self.decode(trg_input, trg_mask, decoder_state)
-        log_probs = self.generator(decoder_logits)
+
+        logit = self.generator(decoder_logits, return_logit=True)
+        log_probs = torch.log_softmax(logit, -1)
         # loss = self.criterion(
         #     input=log_probs.contiguous().view(-1, log_probs.size(-1)),
         #     target=trg.contiguous().view(-1)
         # )
 
-        return {'log_prob': log_probs}
+        return {'log_prob': log_probs, 'logit': logit}
 
     def prepare_for_decode(self, src, src_mask, test=None):
         # src = batch.src

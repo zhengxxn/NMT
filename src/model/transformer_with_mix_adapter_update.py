@@ -41,17 +41,20 @@ class TransformerWithMixAdapter(nn.Module):
     def forward(self, src, src_mask, trg_input, trg, trg_mask, target_domain,
                 mix_output: bool = False,
                 used_domain_list: list = None,
-                go_through_shared_adapter: bool = False,):
+                # go_through_shared_adapter: bool = False,
+                ):
 
         decoder_state = self.prepare_for_decode(src, src_mask, target_domain,
                                                 mix_output=mix_output,
                                                 used_domain_list=used_domain_list,
-                                                go_through_shared_adapter=go_through_shared_adapter)
+                                                # go_through_shared_adapter=go_through_shared_adapter
+                                                )
 
+        # enc_mix_gate = decoder_state.pop('enc_mix_gate')
+        # enc_adapter_output_wo_res_connect = decoder_state.pop('enc_adapter_output_wo_res_connect')
+        # enc_classify_logits = decoder_state.pop('enc_classify_logits')
+        enc_mix_layer_logits = decoder_state.pop('enc_mix_layer_logits')
         enc_adapter_output = decoder_state.pop('enc_adapter_output')
-        enc_mix_gate = decoder_state.pop('enc_mix_gate')
-        enc_adapter_output_wo_res_connect = decoder_state.pop('enc_adapter_output_wo_res_connect')
-        enc_classify_logits = decoder_state.pop('enc_classify_logits')
 
         decode_result = self.decode(trg_input, trg_mask, decoder_state,
                                     target_domain=self.target_domain,
@@ -59,21 +62,26 @@ class TransformerWithMixAdapter(nn.Module):
                                     used_domain_list=self.used_domain_list,
                                     )
 
-        logit = self.generator(decode_result['logits'])
+        logit = self.generator(decode_result['logits'], return_logit=True)
         log_probs = torch.log_softmax(logit, -1)
 
         return {'logit': logit,
                 'log_prob': log_probs,
-
+                'enc_mix_layer_logits': enc_mix_layer_logits,
                 'enc_adapter_output': enc_adapter_output,
-                'enc_mix_gate': enc_mix_gate,
-                'enc_adapter_output_wo_res_connect': enc_adapter_output_wo_res_connect,
-                'enc_classify_logits': enc_classify_logits,
+                'dec_adapter_output': decode_result['layer_adapter_output'],
+                'dec_mix_layer_logits': decode_result['mix_layer_logits']
 
-                'dec_adapter_output_wo_res_connect': decode_result['adapter_output_wo_res_connect'],
-                'dec_classify_logits': decode_result['classify_logits'],
-                'dec_adapter_output': decode_result['adapter_output'],
-                'dec_mix_gate': decode_result['mix_gate']}
+                # 'enc_adapter_output': enc_adapter_output,
+                # 'enc_mix_gate': enc_mix_gate,
+                # 'enc_adapter_output_wo_res_connect': enc_adapter_output_wo_res_connect,
+                # 'enc_classify_logits': enc_classify_logits,
+
+                # 'dec_adapter_output_wo_res_connect': decode_result['adapter_output_wo_res_connect'],
+                # 'dec_classify_logits': decode_result['classify_logits'],
+                # 'dec_adapter_output': decode_result['adapter_output'],
+                # 'dec_mix_gate': decode_result['mix_gate']
+                }
 
     def classify_forward(self, src, src_mask):
 
@@ -86,32 +94,33 @@ class TransformerWithMixAdapter(nn.Module):
     def prepare_for_decode(self, src, src_mask, target_domain,
                            mix_output: bool = False,
                            used_domain_list: list = None,
-                           go_through_shared_adapter: bool = False,):
+                           # go_through_shared_adapter: bool = False,
+                           ):
 
         assert src_mask is not None
 
         self.target_domain = target_domain
         self.mix_output = mix_output
         self.used_domain_list = used_domain_list
-        self.go_through_shared_adapter = go_through_shared_adapter
+        # self.go_through_shared_adapter = go_through_shared_adapter
 
-        encoder_state = self.encode(src, src_mask, target_domain, mix_output, used_domain_list, go_through_shared_adapter)
+        encoder_state = self.encode(src, src_mask, target_domain, mix_output, used_domain_list)
         decoder_state = {
             'memory': encoder_state['memory'],
-
-            'enc_adapter_output': encoder_state['adapter_output'],
-            'enc_mix_gate': encoder_state['mix_gate'],
-            'enc_adapter_output_wo_res_connect': encoder_state['adapter_output_wo_res_connect'],
-            'enc_classify_logits': encoder_state['classify_logits'],
-
             'src_mask': src_mask,
+            'enc_mix_layer_logits': encoder_state['mix_layer_logits'],
+            'enc_adapter_output': encoder_state['layer_adapter_output'],
+            # 'enc_adapter_output': encoder_state['adapter_output'],
+            # 'enc_mix_gate': encoder_state['mix_gate'],
+            # 'enc_adapter_output_wo_res_connect': encoder_state['adapter_output_wo_res_connect'],
+            # 'enc_classify_logits': encoder_state['classify_logits'],
 
             # the variables below are for decoding
             'input': None,
             'enc_attn_cache': None,
             'self_attn_cache': None,
-            'dec_adapter_output': None,
-            'dec_mix_gate': None,
+            # 'dec_adapter_output': None,
+            # 'dec_mix_gate': None,
         }
 
         return decoder_state
@@ -156,27 +165,27 @@ class TransformerWithMixAdapter(nn.Module):
 
         # if the 'dec_mix_gate' and 'dec_mix_gate_0' ara both not in the state, then we do not return them, but should
         # set the default value to None
-        if 'dec_mix_gate' not in decode_state.keys() and 'dec_mix_gate_0' not in decode_state.keys():
-            decode_state['dec_mix_gate'] = None
-        # if 'dec_mix_gate_0' then we need to cat them every decoding step
-        elif 'dec_mix_gate' not in decode_state.keys() and 'dec_mix_gate_0' in decode_state.keys():
-            dec_mix_gate_list = []
-            for i in range(self.decoder.num_layers):
-                dec_mix_gate_list.append(decode_state.get('dec_mix_gate_{}'.format(i), None))
-            decode_state['dec_mix_gate'] = dec_mix_gate_list
+        # if 'dec_mix_gate' not in decode_state.keys() and 'dec_mix_gate_0' not in decode_state.keys():
+        #     decode_state['dec_mix_gate'] = None
+        # # if 'dec_mix_gate_0' then we need to cat them every decoding step
+        # elif 'dec_mix_gate' not in decode_state.keys() and 'dec_mix_gate_0' in decode_state.keys():
+        #     dec_mix_gate_list = []
+        #     for i in range(self.decoder.num_layers):
+        #         dec_mix_gate_list.append(decode_state.get('dec_mix_gate_{}'.format(i), None))
+        #     decode_state['dec_mix_gate'] = dec_mix_gate_list
         # for the first step
-        else:
-            assert decode_state.get('dec_mix_gate') is None
-
-        if 'dec_adapter_output' not in decode_state.keys() and 'dec_adapter_output_0' not in decode_state.keys():
-            decode_state['dec_adapter_output'] = None
-        elif 'dec_adapter_output' not in decode_state.keys() and 'dec_adapter_output_0' in decode_state.keys():
-            dec_adapter_output = []
-            for i in range(self.decoder.num_layers):
-                dec_adapter_output.append(decode_state.get('dec_adapter_output_{}'.format(i), None))
-            decode_state['dec_adapter_output'] = dec_adapter_output
-        else:
-            assert decode_state.get('dec_adapter_output') is None
+        # else:
+        #     assert decode_state.get('dec_mix_gate') is None
+        #
+        # if 'dec_adapter_output' not in decode_state.keys() and 'dec_adapter_output_0' not in decode_state.keys():
+        #     decode_state['dec_adapter_output'] = None
+        # elif 'dec_adapter_output' not in decode_state.keys() and 'dec_adapter_output_0' in decode_state.keys():
+        #     dec_adapter_output = []
+        #     for i in range(self.decoder.num_layers):
+        #         dec_adapter_output.append(decode_state.get('dec_adapter_output_{}'.format(i), None))
+        #     decode_state['dec_adapter_output'] = dec_adapter_output
+        # else:
+        #     assert decode_state.get('dec_adapter_output') is None
 
         decode_result = self.decode(trg_input,
                                     trg_mask,
@@ -184,12 +193,12 @@ class TransformerWithMixAdapter(nn.Module):
                                     target_domain=self.target_domain,
                                     mix_output=self.mix_output,
                                     used_domain_list=self.used_domain_list,
-                                    go_through_shared_adapter=self.go_through_shared_adapter,
+                                    # go_through_shared_adapter=self.go_through_shared_adapter,
                                     test=True)
 
         logits = decode_result['logits']
-        adapter_output = decode_result['adapter_output']  # list or None
-        gate = decode_result['mix_gate']  # list or None
+        # adapter_output = decode_result['adapter_output']  # list or None
+        # gate = decode_result['mix_gate']  # list or None
         new_enc_attn_cache = decode_result['enc_attn_cache_list']
         new_self_attn_cache = decode_result['self_attn_cache_list']
 
@@ -202,21 +211,24 @@ class TransformerWithMixAdapter(nn.Module):
             decode_state['self_attn_cache_' + str(i) + '_key'] = new_self_attn_cache[i][0]
             decode_state['self_attn_cache_' + str(i) + '_value'] = new_self_attn_cache[i][1]
 
-            if adapter_output is not None:
-                decode_state['dec_adapter_output_{}'.format(i)] = adapter_output[i]
+            # if adapter_output is not None:
+            #     decode_state['dec_adapter_output_{}'.format(i)] = adapter_output[i]
 
             # todo: remove temporarily
             # if gate is not None:
             #     decode_state['dec_mix_gate_{}'.format(i)] = gate[i]
 
+        decode_state.pop('mix_layer_logits', None)
         decode_state.pop('enc_attn_cache', None)
         decode_state.pop('self_attn_cache', None)
         decode_state.pop('dec_adapter_output', None)
         decode_state.pop('dec_mix_gate', None)
+        decode_state.pop('enc_adapter_output_wo_res_connect', None)
+        decode_state.pop('enc_classify_logits', None)
 
-        # for k, v in decode_state.items():
-        #     if isinstance(v, list):
-        #         print(k)
+        for k, v in decode_state.items():
+            if isinstance(v, list):
+                print(k)
         # print(decode_state.keys())
 
         return log_prob, decode_state
@@ -226,24 +238,26 @@ class TransformerWithMixAdapter(nn.Module):
                target_domain,
                mix_output: bool = False,
                used_domain_list: list = None,
-               go_through_shared_adapter: bool = False):
+               # go_through_shared_adapter: bool = False
+               ):
 
         assert mix_output == self.mix_output
-        assert go_through_shared_adapter == self.go_through_shared_adapter
+        # assert go_through_shared_adapter == self.go_through_shared_adapter
 
         input_embedding = self.src_embedding_layer(src)
         encoder_state = self.encoder(input_embedding, src_mask,
                                      target_domain=target_domain,
                                      mix_output=mix_output,
                                      used_domain_list=used_domain_list,
-                                     go_through_shared_adapter=go_through_shared_adapter)
+                                     # go_through_shared_adapter=go_through_shared_adapter
+                                     )
         return encoder_state
 
     def decode(self, trg_input, trg_mask, decoder_state,
                target_domain,
                mix_output: bool = False,
                used_domain_list: list = None,
-               go_through_shared_adapter: bool = False,
+               # go_through_shared_adapter: bool = False,
                test=False,
                ):
 
@@ -251,7 +265,7 @@ class TransformerWithMixAdapter(nn.Module):
 
         # check consistency
         assert mix_output == self.mix_output
-        assert go_through_shared_adapter == self.go_through_shared_adapter
+        # assert go_through_shared_adapter == self.go_through_shared_adapter
 
         if test:
             trg_input_embedding = trg_input_embedding[:, -1:]
@@ -262,10 +276,10 @@ class TransformerWithMixAdapter(nn.Module):
                             trg_mask,
                             decoder_state['enc_attn_cache'],
                             decoder_state['self_attn_cache'],
-                            decoder_state['dec_adapter_output'],
-                            decoder_state['dec_mix_gate'],
+                            # decoder_state['dec_adapter_output'],
+                            # decoder_state['dec_mix_gate'],
                             target_domain=target_domain,
                             mix_output=mix_output,
                             used_domain_list=used_domain_list,
-                            go_through_shared_adapter=go_through_shared_adapter,
+                            # go_through_shared_adapter=go_through_shared_adapter,
                             )

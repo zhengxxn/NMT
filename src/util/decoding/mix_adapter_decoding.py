@@ -25,6 +25,7 @@ def beam_search(model,
 
     initial_state.pop('enc_adapter_output', None)
     initial_state.pop('enc_mix_gate', None)
+    initial_state.pop('enc_mix_layer_logits', None)
 
     prev_y = torch.ones(batch_size).fill_(sos_index).type_as(src)  # sos
     beam = BeamSearch(end_index=eos_index,

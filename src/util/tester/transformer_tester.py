@@ -83,7 +83,7 @@ class TransformerTester:
 
         return search_results
 
-    def decoding(self):
+    def decoding(self, compute_bleu=True):
         for test_iterator, test_output_path, test_ref_file_path in \
                 zip(self.test_iterators, self.config['Test']['output_path'], self.test_ref_file_paths):
 
@@ -105,6 +105,10 @@ class TransformerTester:
 
                         for i in range(prediction.size(0)):
                             hypotheses.append(tensor2str(prediction[i], self.vocab['trg']))
+
+                test_de_bpe_output_path = test_output_path + '.bpe'
+                with open(test_de_bpe_output_path, 'w', encoding='utf-8') as f:
+                    f.write("\n".join(hypotheses))
 
                 if self.config['Vocab']['use_bpe']:
                     hypotheses = [de_bpe(sent) for sent in hypotheses]
@@ -129,21 +133,22 @@ class TransformerTester:
                         os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + test_initial_output_path +
                                   ' > ' + test_output_path)
 
-                with open(test_output_path, 'r', encoding='utf-8') as f:
-                    hypotheses = f.read().splitlines()
+                if compute_bleu:
+                    with open(test_output_path, 'r', encoding='utf-8') as f:
+                        hypotheses = f.read().splitlines()
 
-                print(len(hypotheses))
-                print(len(references))
-                bleu_score = sacrebleu.corpus_bleu(hypotheses, [references], tokenize=self.config['Test']['tokenize'])
+                    print(len(hypotheses))
+                    print(len(references))
+                    bleu_score = sacrebleu.corpus_bleu(hypotheses, [references], tokenize=self.config['Test']['tokenize'])
 
-                print('some examples')
-                for i in range(3):
-                    print("hyp: ", hypotheses[i])
-                    print("ref: ", references[i])
+                    print('some examples')
+                    for i in range(3):
+                        print("hyp: ", hypotheses[i])
+                        print("ref: ", references[i])
 
-                print()
-                print('bleu scores: ', bleu_score)
-                print()
+                    print()
+                    print('bleu scores: ', bleu_score)
+                    print()
 
     def test_step(self, batch):
         new_batch = self.rebatch(batch)

@@ -45,7 +45,7 @@ class TransformerEncoderLayerWithMixAdapter(nn.Module):
                 target_domain=None,
                 mix_output: bool = False,
                 used_domain_list: list = None,
-                go_through_shared_adapter: bool = False
+                # go_through_shared_adapter: bool = False
                 ):
 
         # x + dropout(self_attention(Layer_norm(x)))
@@ -53,7 +53,7 @@ class TransformerEncoderLayerWithMixAdapter(nn.Module):
         # x + dropout(feed forward(layer_norm(x)))
         x = self.sub_layer_connections[1](x, self.feed_forward_layer)
 
-        result = self.adapters(x, target_domain, mix_output, used_domain_list, go_through_shared_adapter)
+        result = self.adapters(x, target_domain, mix_output, used_domain_list, src_mask)
 
         return result
 
@@ -70,12 +70,14 @@ class TransformerEncoderWithMixAdapter(nn.Module):
                 target_domain=None,
                 mix_output: bool = False,
                 used_domain_list: list = None,
-                go_through_shared_adapter: bool = False):
+                # go_through_shared_adapter: bool = False
+                ):
 
         layers_adapter_output = []
-        layers_adapter_output_wo_res_connect = []  # without residual connect
-        classify_logits = []
-        mix_gate = []
+        # layers_adapter_output_wo_res_connect = []  # without residual connect
+        # classify_logits = []
+        # mix_gate = []
+        mix_layer_logits = []
 
         for i, layer in enumerate(self.layers):
 
@@ -87,20 +89,27 @@ class TransformerEncoderWithMixAdapter(nn.Module):
             else:
                 cur_layer_target_domain = target_domain
 
-            result = layer(x, src_mask, cur_layer_target_domain, mix_output, used_domain_list, go_through_shared_adapter)
+            result = layer(x, src_mask, cur_layer_target_domain, mix_output, used_domain_list)
 
-            x = result['output']
-            layers_adapter_output.append(x)
+            x = result.get('output', None)
+            layers_adapter_output.append(result.get('adapter_output', None))
 
-            if go_through_shared_adapter:
-                layers_adapter_output_wo_res_connect.append(result['adapter_output'])
-                classify_logits.append(result['classify_logits'])
+            if mix_output is True:
+                mix_layer_logits.append(result['mix_layer_logits'])
 
-            if 'mix_gate' in result.keys():
-                mix_gate.append(result['mix_gate'])
+            # if go_through_shared_adapter:
+            #     layers_adapter_output_wo_res_connect.append(result['adapter_output'])
+            #     classify_logits.append(result['classify_logits'])
+            #
+            # if 'mix_gate' in result.keys():
+            #     mix_gate.append(result['mix_gate'])
 
         return {'memory': self.layer_norm(x),
-                'adapter_output': layers_adapter_output,
-                'adapter_output_wo_res_connect': layers_adapter_output_wo_res_connect,
-                'classify_logits': classify_logits,
-                'mix_gate': mix_gate}
+                # 'adapter_output': layers_adapter_output,
+                'mix_layer_logits': mix_layer_logits,
+                'layer_adapter_output': layers_adapter_output,
+                }
+
+                # 'adapter_output_wo_res_connect': layers_adapter_output_wo_res_connect,
+                # 'classify_logits': classify_logits,
+                # 'mix_gate': mix_gate}

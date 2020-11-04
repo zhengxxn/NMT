@@ -1,9 +1,8 @@
 from util.trainer.transformer_trainer import Trainer
-from util.decoding.adapter_decoding import beam_search
 import torch
 
 
-class Kd_Adapter_Trainer(Trainer):
+class Kd_Trainer(Trainer):
 
     def __init__(self,
                  model,
@@ -20,8 +19,9 @@ class Kd_Adapter_Trainer(Trainer):
                  validation_config,
                  record_config,
                  device,
-                 target_domain,
-                 ref_domain_dict=None,
+                 ref_model,
+                 ref_temperature,
+                 ref_factor,
                  ):
 
         super().__init__(
@@ -40,14 +40,15 @@ class Kd_Adapter_Trainer(Trainer):
             record_config,
             device, )
 
-        self.target_domain = target_domain
-        self.ref_domain_dict = ref_domain_dict
-
-        self.kl_criterion = torch.nn.KLDivLoss(reduction='sum')
+        self.ref_model = ref_model
+        self.ref_temperature = ref_temperature
+        self.ref_factor = ref_factor
+        self.kl_criterion = torch.nn.KLDivLoss(reduction='none')
+        self.ref_model.eval()
 
     def train_step(self, model, batches: list):
         """
-        a step includes a forward and a backward, and we rebatch it with some batch options
+        a step includes a forward and a backward, and we  rebatch it with some batch options
         :param batches: [domain1 batch, domain2 batch ...]
         :param model:
         :return: sum loss, sum tokens
@@ -58,34 +59,34 @@ class Kd_Adapter_Trainer(Trainer):
         for batch in batches:
             new_batch = self.rebatch(batch)
 
-            ref_logit = {}
-
             with torch.no_grad():
-                for ref_domain in self.ref_domain_dict.keys():
-                    ref_result = model.forward(new_batch.src, new_batch.src_mask,
-                                               new_batch.trg_input, new_batch.trg, new_batch.trg_mask,
-                                               ref_domain)
-                    ref_logit[ref_domain] = ref_result['logit']
+                ref_result = self.ref_model.forward(new_batch.src, new_batch.src_mask,
+                                                    new_batch.trg_input, new_batch.trg, new_batch.trg_mask, )
+                ref_logit = ref_result['logit']
 
-            target_adapter_result = model.forward(new_batch.src, new_batch.src_mask,
-                                                  new_batch.trg_input, new_batch.trg, new_batch.trg_mask,
-                                                  self.target_domain)
-            log_prob = target_adapter_result['log_prob']
-            target_logit = target_adapter_result['logit']
+            result = model.forward(new_batch.src, new_batch.src_mask,
+                                   new_batch.trg_input, new_batch.trg, new_batch.trg_mask, )
 
-            loss = self.criterion(
+            log_prob = result['log_prob']
+            logit = result['logit']
+
+            translation_loss = self.criterion(
                 log_prob.contiguous().view(-1, log_prob.size(-1)),
                 new_batch.trg.contiguous().view(-1)
             )
 
-            for ref_domain in self.ref_domain_dict.keys():
-                ref_domain_logit = ref_logit[ref_domain]
-                temperature = self.ref_domain_dict[ref_domain]['temperature']
-                factor = self.ref_domain_dict[ref_domain]['factor']
-                loss = loss + factor * (temperature ** 2) * self.kl_criterion(
-                    (target_logit / temperature).log_softmax(-1),
-                    (ref_domain_logit / temperature).softmax(-1))
+            temperature = self.ref_temperature
+            factor = self.ref_factor
 
+            unreduced_kd_loss = self.kl_criterion(
+                (logit / temperature).log_softmax(-1),
+                (ref_logit / temperature).softmax(-1)).sum(-1)
+
+            trg_mask = new_batch.trg.ne(self.vocab['trg'].stoi['<pad>'])
+            unreduced_kd_loss = unreduced_kd_loss.masked_fill(trg_mask == 0, value=0)
+            kd_loss = factor * (temperature ** 2) * unreduced_kd_loss.sum()
+
+            loss = (1 - self.ref_factor) * translation_loss + self.ref_factor * kd_loss
             # loss = model.forward(new_batch)['loss']  # the loss is summation of all tokens
 
             sum_loss += loss.item()
@@ -97,31 +98,3 @@ class Kd_Adapter_Trainer(Trainer):
             loss.backward()
 
         return sum_loss, sum_tokens
-
-    def validation_step(self, batch):
-        new_batch = self.rebatch(batch)
-        log_prob = self.model.forward(new_batch.src, new_batch.src_mask,
-                                      new_batch.trg_input, new_batch.trg, new_batch.trg_mask,
-                                      self.target_domain)['log_prob']
-        loss = self.validation_criterion(
-            log_prob.contiguous().view(-1, log_prob.size(-1)),
-            new_batch.trg.contiguous().view(-1)
-        )
-        return loss.item(), new_batch.ntokens.item()
-
-    def validation_decoding_step(self, batch):
-        search_results = beam_search(
-            model=self.model,
-            src=batch.src,
-            sos_index=self.vocab['trg'].stoi['<sos>'],
-            eos_index=self.vocab['trg'].stoi['<eos>'],
-            pad_index=self.vocab['trg'].stoi['<pad>'],
-            target_domain=self.target_domain,
-            max_len=self.decoding_max_steps,
-            beam_size=self.decoding_beam_size,
-            length_penalty=self.decoding_length_penalty,
-            alpha=self.decoding_alpha,
-            use_multiple_gpu=self.use_multiple_gpu,
-        )
-
-        return search_results

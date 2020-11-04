@@ -2,6 +2,7 @@ import yaml
 import torch
 import numpy as np
 import sys
+import pickle
 from util.tester.mix_adapter_tester import MixAdapterTester
 
 
@@ -27,6 +28,26 @@ def main():
             with open(path, 'w') as f:
                 loss = [str(l) for l in loss]
                 f.write('\n'.join(loss))
+
+    elif config['Test'].get('test_activation', False):
+        # tester.test_activation()
+        with open(config['Test']['output_path'][0], 'wb') as f:
+            tester.test_activation()
+            activation_list = []
+            for i in range(0, 6):
+                tester.model.encoder.layers[i].adapters.adapter_layers.kde.activation = \
+                    tester.model.encoder.layers[i].adapters.adapter_layers.kde.activation / \
+                    tester.model.encoder.layers[i].adapters.adapter_layers.kde.num_tokens
+                activation_list.append(tester.model.encoder.layers[i].adapters.adapter_layers.kde.activation.tolist())
+            for i in range(0, 6):
+                tester.model.decoder.layers[i].adapters.adapter_layers.kde.activation = \
+                    tester.model.decoder.layers[i].adapters.adapter_layers.kde.activation / \
+                    tester.model.decoder.layers[i].adapters.adapter_layers.kde.num_tokens
+                activation_list.append(tester.model.decoder.layers[i].adapters.adapter_layers.kde.activation.tolist())
+            pickle.dump(activation_list, f)
+
+    elif config['Test'].get('only_decoding', False):
+        tester.decoding(compute_bleu=False)
     else:
         tester.decoding()
 

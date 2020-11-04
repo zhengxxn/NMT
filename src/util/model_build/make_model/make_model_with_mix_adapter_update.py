@@ -31,16 +31,35 @@ def make_transformer_with_mix_adapter_update(model_config, vocab):
         ff_dim=model_config['feedforward_dim'],
         dropout=model_config['dropout_rate']
     )
-    adapter = MixtureOfAdapter(
-        domain_adapter_dict=model_config['domain_adapter_dict'],
-        feature_size=model_config['feature_size'],
-        dropout_rate=model_config['dropout_rate'],
-        domain_list=model_config['domain_list'],
-        domain_inner_gate_list=model_config['domain_inner_gate_list'],
-        gate_activate_func=model_config['adapter_gate_activate'],
-        stack_between_adapter_and_experts=model_config['stack_between_adapter_and_experts'] if
-        'stack_between_adapter_and_experts' in model_config else False
-    )
+
+    adapter = None
+    if 'domain_adapter_dict' in model_config:
+        adapter = MixtureOfAdapter(
+            domain_adapter_dict=model_config['domain_adapter_dict'],
+            feature_size=model_config['feature_size'],
+            dropout_rate=model_config['dropout_rate'],
+            # domain_list=model_config['domain_list'],
+            # domain_inner_gate_list=model_config['domain_inner_gate_list'],
+            # gate_activate_func=model_config['adapter_gate_activate'],
+            # stack_between_adapter_and_experts=model_config['stack_between_adapter_and_experts'] if
+            # 'stack_between_adapter_and_experts' in model_config else False
+        )
+
+    enc_adapter = adapter
+    if 'enc_domain_adapter_dict' in model_config:
+        enc_adapter = MixtureOfAdapter(
+            domain_adapter_dict=model_config['enc_domain_adapter_dict'],
+            feature_size=model_config['feature_size'],
+            dropout_rate=model_config['dropout_rate'],
+        )
+
+    dec_adapter = adapter
+    if 'dec_domain_adapter_dict' in model_config:
+        dec_adapter = MixtureOfAdapter(
+            domain_adapter_dict=model_config['dec_domain_adapter_dict'],
+            feature_size=model_config['feature_size'],
+            dropout_rate=model_config['dropout_rate'],
+        )
 
     model = TransformerWithMixAdapter(
         src_embedding_layer=Embeddings(
@@ -59,7 +78,7 @@ def make_transformer_with_mix_adapter_update(model_config, vocab):
             layer=TransformerEncoderLayerWithMixAdapter(feature_size=model_config['feature_size'],
                                                         self_attention_layer=copy.deepcopy(attention),
                                                         feed_forward_layer=copy.deepcopy(feed_forward),
-                                                        adapters=copy.deepcopy(adapter),
+                                                        adapters=copy.deepcopy(enc_adapter),
                                                         dropout_rate=model_config['dropout_rate'],
                                                         ),
             feature_size=model_config['feature_size'],
@@ -72,7 +91,7 @@ def make_transformer_with_mix_adapter_update(model_config, vocab):
                                                         cross_attention_layer=copy.deepcopy(
                                                             attention_with_cache),
                                                         feed_forward_layer=copy.deepcopy(feed_forward),
-                                                        adapters=copy.deepcopy(adapter),
+                                                        adapters=copy.deepcopy(dec_adapter),
                                                         dropout_rate=model_config['dropout_rate'],
                                                         ),
             num_layers=model_config['num_layers'],
@@ -86,14 +105,23 @@ def make_transformer_with_mix_adapter_update(model_config, vocab):
         share_enc_dec_embedding=model_config['share_enc_dec_embedding'],
     )
 
-    for p in model.parameters():
-        if p.dim() > 1:
-            nn.init.xavier_uniform_(p)
+    # for p in model.parameters():
+    #     if p.dim() > 1:
+    #         nn.init.xavier_uniform_(p)
 
     for name, param in model.named_parameters():
-        # if param.dim() > 1 and 'adapter' in name:
-        #     nn.init.zeros_(param)
-        if 'memory_score_bias' in name:
+        if param.dim() > 1 and 'W' not in name and 'B' not in name:
             nn.init.xavier_uniform_(param)
+
+        else:
+            if param.dim() > 1:
+                print('module self init', name, param.size())
+
+    # for name, param in model.named_parameters():
+    #     if param.dim() > 1 and 'adapter' in name:
+    #     #     nn.init.zeros_(param)
+    #     # if 'adapter' in name:
+    #         print('init adapter', name)
+    #         nn.init.xavier_uniform_(param, 0.001)
 
     return model

@@ -56,11 +56,49 @@ def new_save_to_tsv(config, tsv_file_path):
     for key in config.keys():
         file_name = config[key]
         with open(file_name, encoding='utf-8') as f:
-            lines = f.read().split('\n')[:-1] # .splitlines()
+            lines = f.read().split('\n')  #[:-1] # .splitlines()
             print(len(lines))
             # split('\n')[:-1]
-            value = [line for line in lines]
+            value = [line for line in lines if len(line) > 0]
             raw_data[key] = value
+
+    df = pd.DataFrame(raw_data)
+    df.to_csv(tsv_file_path, index=False, sep='\t')
+
+
+def clean_and_save_to_tsv(config, tsv_file_path):
+
+    file_length = 0
+    raw_data = {}
+    for key in config.keys():
+        file_name = config[key]
+        with open(file_name, 'r', encoding='utf-8') as f:
+            lines = f.read().split('\n')  #[:-1] # .splitlines()
+            if len(lines[-1]) == 0:
+                lines = lines[:-1]
+            # split('\n')[:-1]
+            value = [line for line in lines]
+            # print(value[-1])
+            file_length = len(value)
+            raw_data[key] = value
+
+    remove_idx = []
+    for i in range(0, file_length):
+        src_line = raw_data['src'][i]
+        trg_line = raw_data['trg'][i]
+        long_length = len(src_line.split(' ')) if len(src_line.split(' ')) > len(trg_line.split(' ')) else len(trg_line.split(' '))
+        short_length = len(src_line.split(' ')) + len(trg_line.split(' ')) - long_length
+        if long_length / short_length > 9:
+            remove_idx.append(i)
+
+    print(len(remove_idx))
+    remove_idx.reverse()
+    for index in remove_idx:
+        del raw_data['src'][index]
+        del raw_data['trg'][index]
+
+    print(len(raw_data['src']))
+    print(len(raw_data['trg']))
 
     df = pd.DataFrame(raw_data)
     df.to_csv(tsv_file_path, index=False, sep='\t')

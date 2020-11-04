@@ -28,6 +28,10 @@ def main():
                 loss = [[str(word_loss) for word_loss in sent] for sent in loss]
                 loss = [' '.join(sent) for sent in loss]
                 f.write('\n'.join(loss))
+
+    elif config['Test'].get('only_decoding', False):
+        tester.decoding(compute_bleu=False)
+
     else:
         tester.decoding()
 

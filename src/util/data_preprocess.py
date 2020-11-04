@@ -4,7 +4,7 @@ import sys
 import yaml
 from tqdm import tqdm
 
-from util.convenient_funcs import new_save_to_tsv
+from util.convenient_funcs import new_save_to_tsv, clean_and_save_to_tsv
 
 
 def open_vocab(path):
@@ -185,7 +185,7 @@ def concat(config):
 
 
 def lowercase(configs):
-    lowercase_script = '../scripts/lowercase.perl '
+    lowercase_script = '../scripts/tokenizer/lowercase.perl '
 
     for config in configs:
         language = config['language']
@@ -235,7 +235,6 @@ def tokenize(configs):
             # cmd_str = 'cat ' + s_file + ' | ' + \
             #           tokenize_script + ' -threads 8 -l ' + language + \
             #           ' > ' + temp_t_file
-
             print(cmd_str)
             os.system(cmd_str)
 
@@ -431,6 +430,13 @@ def save_tsv(configs):
         new_save_to_tsv(config['tsv_format'], tsv_path)
 
 
+def clean_and_save_tsv(configs):
+
+    for config in configs:
+        tsv_path = config['tsv_path']
+        clean_and_save_to_tsv(config['tsv_format'], tsv_path)
+
+
 def action(name, config):
     if name == 'lower':
         lowercase(config['lowercase'])
@@ -473,6 +479,10 @@ def action(name, config):
 
     elif name == 'get_position_index':
         get_position_index(config['get_position_index'])
+
+    elif name == 'clean_and_save_tsv':
+        clean_and_save_tsv(config['clean_and_save_tsv'])
+
 
 
 def main():
