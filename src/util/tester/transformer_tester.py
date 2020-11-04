@@ -56,6 +56,11 @@ class TransformerTester:
         self.detruecase_script = config['Test']['detruecase_script']
         self.detokenize_script = config['Test']['detokenize_script']
 
+        if 'detruecase' in config['Test']:
+            self.detruecase = config['Test']['detrucase']
+        else:
+            self.detruecase = False
+
         model = model.to(device)
         self.model = model
 
@@ -78,7 +83,7 @@ class TransformerTester:
 
         return search_results
 
-    def decoding(self):
+    def decoding(self, compute_bleu=True):
         for test_iterator, test_output_path, test_ref_file_path in \
                 zip(self.test_iterators, self.config['Test']['output_path'], self.test_ref_file_paths):
 
@@ -101,6 +106,10 @@ class TransformerTester:
                         for i in range(prediction.size(0)):
                             hypotheses.append(tensor2str(prediction[i], self.vocab['trg']))
 
+                test_de_bpe_output_path = test_output_path + '.bpe'
+                with open(test_de_bpe_output_path, 'w', encoding='utf-8') as f:
+                    f.write("\n".join(hypotheses))
+
                 if self.config['Vocab']['use_bpe']:
                     hypotheses = [de_bpe(sent) for sent in hypotheses]
                     # references = [de_bpe(sent) for sent in references]
@@ -111,26 +120,35 @@ class TransformerTester:
 
                 test_initial_output_path = test_output_path + '.initial'
                 detruecase_path = test_output_path + '.detc'
-                # detokenize_path = test_output_path + '.detok'
+
                 with open(test_initial_output_path, 'w', encoding='utf-8') as f:
                     f.write("\n".join(hypotheses))
                     # detruecase
-                    # os.system(detruecase_script + ' < ' + test_initial_output_path + ' > ' + detruecase_path)
-                    os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + test_initial_output_path +
-                              ' > ' + test_output_path)
-                with open(test_output_path, 'r', encoding='utf-8') as f:
-                    hypotheses = f.read().splitlines()
+                    if self.detruecase:
+                        os.system(self.detruecase_script + ' < ' + test_initial_output_path + ' > ' + detruecase_path)
+                        os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + detruecase_path +
+                                  ' > ' + test_output_path)
+                    else:
 
-                bleu_score = sacrebleu.corpus_bleu(hypotheses, [references], tokenize=self.config['Test']['tokenize'])
+                        os.system(self.detokenize_script + ' -l ' + self.target_language + ' < ' + test_initial_output_path +
+                                  ' > ' + test_output_path)
 
-                print('some examples')
-                for i in range(3):
-                    print("hyp: ", hypotheses[i])
-                    print("ref: ", references[i])
+                if compute_bleu:
+                    with open(test_output_path, 'r', encoding='utf-8') as f:
+                        hypotheses = f.read().splitlines()
 
-                print()
-                print('bleu scores: ', bleu_score)
-                print()
+                    print(len(hypotheses))
+                    print(len(references))
+                    bleu_score = sacrebleu.corpus_bleu(hypotheses, [references], tokenize=self.config['Test']['tokenize'])
+
+                    print('some examples')
+                    for i in range(3):
+                        print("hyp: ", hypotheses[i])
+                        print("ref: ", references[i])
+
+                    print()
+                    print('bleu scores: ', bleu_score)
+                    print()
 
     def test_step(self, batch):
         new_batch = self.rebatch(batch)
@@ -139,6 +157,7 @@ class TransformerTester:
                                       new_batch.trg_input,
                                       new_batch.trg,
                                       new_batch.trg_mask)['log_prob']
+        # print(new_batch.trg.size())
         loss = self.test_criterion(
             log_prob.contiguous(),
             new_batch.trg.contiguous(),
@@ -160,8 +179,9 @@ class TransformerTester:
                 with tqdm(test_iterator) as bar:
                     bar.set_description("loss validation")
                     for batch in bar:
-
                         loss = self.test_step(batch).tolist()
+                        # print(loss)
+                        loss = [[round(val, 2) for val in batch] for batch in loss]
                         cur_data_loss = cur_data_loss + loss
                 loss_list.append(cur_data_loss)
         return loss_list

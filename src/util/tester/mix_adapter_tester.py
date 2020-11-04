@@ -1,5 +1,7 @@
 from util.tester.transformer_tester import TransformerTester
 from util.decoding.mix_adapter_decoding import beam_search
+from tqdm import tqdm
+import torch
 
 
 class MixAdapterTester(TransformerTester):
@@ -18,8 +20,6 @@ class MixAdapterTester(TransformerTester):
             alpha=self.config['Test']['beam_search']['alpha'],
             mix_output=self.config['Test']['mix_output'],
             used_domain_list=self.config['Test']['used_domain_list'],
-            domain_mask=self.config['Test']['domain_mask'],
-            mix_weight=None,
         )
 
         return search_results
@@ -34,8 +34,8 @@ class MixAdapterTester(TransformerTester):
                                       target_domain=self.config['Test']['target_domain'],
                                       mix_output=self.config['Test']['mix_output'],
                                       used_domain_list=self.config['Test']['used_domain_list'],
-                                      domain_mask=self.config['Test']['domain_mask'],
-                                      mix_weight=None,
+                                      # domain_mask=self.config['Test'].get('domain_mask', None),
+                                      # mix_weight=None,
                                       )['log_prob']
         loss = self.test_criterion(
             log_prob.contiguous(),
@@ -43,3 +43,13 @@ class MixAdapterTester(TransformerTester):
         )  # [batch]
 
         return loss
+
+    def test_activation(self):
+
+        self.model.eval()
+        with torch.no_grad():
+            for test_iterator in self.test_iterators:
+                with tqdm(test_iterator) as bar:
+                    bar.set_description("loss validation")
+                    for batch in bar:
+                        self.test_step(batch)

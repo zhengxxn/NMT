@@ -1,8 +1,8 @@
 import yaml
 import torch
-from util.trainer.transformer_trainer import Trainer
+from util.trainer.lm_trainer import Trainer
 from util.convenient_funcs import create_path, set_random_seed
-from util.data_loader.mt_data_loader import MTDataLoader
+from util.data_loader.lm_data_loader import LMDataLoader
 from util.model_builder import ModelBuilder
 import sys
 import os
@@ -28,41 +28,27 @@ def main():
 
     # load dataset
     print('load dataset ...')
-    mt_data_loader = MTDataLoader(config)
-    mt_data_loader.load_datasets(load_train=True, load_dev=True, load_test=False)
-    mt_data_loader.build_vocab()
-    mt_data_loader.build_iterators(device=device, build_train=True, build_dev=True, build_test=False)
+    lm_data_loader = LMDataLoader(config)
+    lm_data_loader.load_datasets(load_train=True, load_dev=True, load_test=False)
+    lm_data_loader.build_vocab()
+    lm_data_loader.build_iterators(device=device, build_train=True, build_dev=True, build_test=False)
 
-    vocab = mt_data_loader.vocab
-    train_iterators = mt_data_loader.train_iterators
-    dev_iterators = mt_data_loader.dev_iterators
-    dev_test_iterators = mt_data_loader.dev_test_iterators
+    for i in range(5):
+        print(lm_data_loader.train_datasets[0].examples[i].text)
+
+    vocab = lm_data_loader.vocab
+    train_iterators = lm_data_loader.train_iterators
+    dev_iterators = lm_data_loader.dev_iterators
 
     # make model
     model_builder = ModelBuilder()
-    model = model_builder.build_model(model_name='transformer',
+    model = model_builder.build_model(model_name='transformer_language_model',
                                       model_config=config['Model'],
                                       vocab=vocab,
                                       device=device,
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
     print('trained parameters: ')
-
-    if 'params' in config['Train']:
-        train_params = config['Train']['params']
-
-        for name, param in model.named_parameters():
-
-            tag = True
-            for param_filter in train_params:
-                if isinstance(param_filter, str):
-                    if param_filter not in name:
-                        tag = False
-                if isinstance(param_filter, list):
-                    if not any(domain in name for domain in param_filter):
-                        tag = False
-                param.requires_grad = tag
-
     for name, param in model.named_parameters():
         if param.requires_grad:
             print(name, param.shape)
@@ -100,7 +86,6 @@ def main():
         lr_scheduler=lr_scheduler,
         train_iterators=train_iterators,
         validation_iterators=dev_iterators,
-        validation_test_iterators=dev_test_iterators,
         optimizer_config=config['Optimizer'],
         train_config=config['Train'],
         validation_config=config['Validation'],

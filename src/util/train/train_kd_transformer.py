@@ -1,11 +1,12 @@
 import yaml
 import torch
-from util.trainer.transformer_trainer import Trainer
+from util.trainer.kd_trainer import Kd_Trainer
 from util.convenient_funcs import create_path, set_random_seed
 from util.data_loader.mt_data_loader import MTDataLoader
 from util.model_builder import ModelBuilder
 import sys
 import os
+
 global max_src_in_batch, max_tgt_in_batch
 
 
@@ -47,6 +48,13 @@ def main():
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
     print('trained parameters: ')
+
+    ref_model = model_builder.build_model(model_name='transformer',
+                                          model_config=config['Model'],
+                                          vocab=vocab,
+                                          device=device,
+                                          load_pretrained=True,
+                                          pretrain_path=config['Train']['ref_model_load_path'])
 
     if 'params' in config['Train']:
         train_params = config['Train']['params']
@@ -91,7 +99,7 @@ def main():
 
     # parameters=filter(lambda p: p.requires_grad, model.parameters()))
 
-    trainer = Trainer(
+    trainer = Kd_Trainer(
         model=model,
         criterion=criterion,
         validation_criterion=validation_criterion,
@@ -106,6 +114,9 @@ def main():
         validation_config=config['Validation'],
         record_config=config['Record'],
         device=device,
+        ref_model=ref_model,
+        ref_temperature=config['Train']['ref_temperature'],
+        ref_factor=config['Train']['ref_factor'],
     )
 
     trainer.train()

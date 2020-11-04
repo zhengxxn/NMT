@@ -2,6 +2,7 @@ from torchtext.data.iterator import Iterator
 import random
 
 global max_src_in_batch, max_tgt_in_batch
+global max_token_in_batch
 
 
 def max_token_batch_size_fn(new, count, sofar):
@@ -12,6 +13,7 @@ def max_token_batch_size_fn(new, count, sofar):
     :param sofar: current effective batch size
     :return: the new effective batch size resulting from adding that example to a batch
     """
+
     "Keep augmenting batch and calculate total number of tokens + padding."
     global max_src_in_batch, max_tgt_in_batch
 
@@ -26,11 +28,27 @@ def max_token_batch_size_fn(new, count, sofar):
     return max(src_elements, tgt_elements)
 
 
+def text_max_token_batch_size_fn(new, count, sofar):
+    """
+    used for language model
+    """
+
+    global max_token_in_batch
+
+    if count == 1:
+        max_token_in_batch = 0
+
+    max_token_in_batch = max(max_token_in_batch, len(new.text) + 2)
+    elements = count * max_token_in_batch
+    return elements
+
+
 def batch(data, batch_size, batch_size_fn=None):
     """Yield elements from data in chunks of batch_size."""
     if batch_size_fn is None:
         def batch_size_fn(new, count, sofar):
             return count
+
     minibatch, size_so_far = [], 0
     for ex in data:
         minibatch.append(ex)
@@ -53,6 +71,7 @@ def pool(data, batch_size, key, batch_size_fn=lambda new, count, sofar: count,
     each chunk using sort_key, then batch these examples and shuffle the
     batches.
     """
+
     if random_shuffler is None:
         random_shuffler = random.shuffle
     for p in batch(data, batch_size * 8192, batch_size_fn):

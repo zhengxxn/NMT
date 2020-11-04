@@ -1,11 +1,15 @@
 import yaml
 import torch
-from util.trainer.transformer_trainer import Trainer
+
 from util.convenient_funcs import create_path, set_random_seed
 from util.data_loader.mt_data_loader import MTDataLoader
 from util.model_builder import ModelBuilder
+
+from util.trainer.mix_adapter_trainer_update import Mix_Adapter_Trainer
+
 import sys
 import os
+
 global max_src_in_batch, max_tgt_in_batch
 
 
@@ -17,14 +21,10 @@ def main():
         config = yaml.load(config_file)
         create_path(config['Record']['training_record_path'])
 
-    # set random seed
-    set_random_seed(config['Train']['random_seed'])
-
     # ================================================================================== #
     # set the device
+    set_random_seed(config['Train']['random_seed'])
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    # set the data fields dict['src': (name, field), 'trg': (name, field)]
 
     # load dataset
     print('load dataset ...')
@@ -35,48 +35,48 @@ def main():
 
     vocab = mt_data_loader.vocab
     train_iterators = mt_data_loader.train_iterators
+    train_iterator_domain = config['Dataset']['train_dataset_domain']
     dev_iterators = mt_data_loader.dev_iterators
     dev_test_iterators = mt_data_loader.dev_test_iterators
+    dev_iterator_domain = config['Dataset']['dev_dataset_domain']
 
-    # make model
     model_builder = ModelBuilder()
-    model = model_builder.build_model(model_name='transformer',
+    model = model_builder.build_model(model_name='transformer_with_mix_adapter_update',
                                       model_config=config['Model'],
                                       vocab=vocab,
                                       device=device,
                                       load_pretrained=config['Train']['load_exist_model'],
                                       pretrain_path=config['Train']['model_load_path'])
-    print('trained parameters: ')
+    # model.classify_domain_mask = model.classify_domain_mask.to(device)
 
-    if 'params' in config['Train']:
-        train_params = config['Train']['params']
-
-        for name, param in model.named_parameters():
-
-            tag = True
-            for param_filter in train_params:
-                if isinstance(param_filter, str):
-                    if param_filter not in name:
-                        tag = False
-                if isinstance(param_filter, list):
-                    if not any(domain in name for domain in param_filter):
-                        tag = False
-                param.requires_grad = tag
-
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            print(name, param.shape)
-
-    # make criterion
-    # the label_smoothing of validation criterion is always set to 0
     criterion = model_builder.build_criterion(criterion_config=config['Criterion'], vocab=vocab)
     validation_criterion = model_builder.build_criterion(criterion_config={
         'name': 'kl_divergence',
         'label_smoothing': 0,
     }, vocab=vocab)
 
-    # make optimizer
-    optimizer = model_builder.build_optimizer(parameters=model.parameters(),
+    # training_domain = config['Train']['training_domain']
+    train_params = config['Train']['params']
+
+    for name, param in model.named_parameters():
+
+        tag = True
+        for param_filter in train_params:
+            if isinstance(param_filter, str):
+                if param_filter not in name:
+                    tag = False
+            if isinstance(param_filter, list):
+                if not any(domain in name for domain in param_filter):
+                    tag = False
+            param.requires_grad = tag
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name, param.shape)
+
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+
+    optimizer = model_builder.build_optimizer(parameters=parameters,
                                               optimizer_config=config['Optimizer'],
                                               load_pretrained=config['Train']['load_optimizer'],
                                               pretrain_path=config['Train']['optimizer_path'])
@@ -91,7 +91,7 @@ def main():
 
     # parameters=filter(lambda p: p.requires_grad, model.parameters()))
 
-    trainer = Trainer(
+    trainer = Mix_Adapter_Trainer(
         model=model,
         criterion=criterion,
         validation_criterion=validation_criterion,

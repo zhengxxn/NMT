@@ -23,6 +23,23 @@ def mt_data_wo_length_fields():
     return data_fields
 
 
+def lm_data_fields():
+    """
+    Language Model Data Field, Only contains Text
+    """
+
+    text = Field(sequential=True,
+                 use_vocab=True,
+                 batch_first=True,
+                 init_token='<sos>',
+                 eos_token='<eos>',
+                 include_lengths=False,
+                 is_target=True)
+
+    data_field = [('text', text)]
+    return data_field
+
+
 def mt_data_fields():
     src_text = Field(sequential=True,
                      use_vocab=True,

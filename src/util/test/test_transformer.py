@@ -25,8 +25,13 @@ def main():
         loss_list = tester.test_loss()
         for loss, path in zip(loss_list, config['Test']['output_path']):
             with open(path, 'w') as f:
-                loss = [str(l) for l in loss]
+                loss = [[str(word_loss) for word_loss in sent] for sent in loss]
+                loss = [' '.join(sent) for sent in loss]
                 f.write('\n'.join(loss))
+
+    elif config['Test'].get('only_decoding', False):
+        tester.decoding(compute_bleu=False)
+
     else:
         tester.decoding()
 
